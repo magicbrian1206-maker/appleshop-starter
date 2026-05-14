@@ -239,11 +239,24 @@
   <p class="footer">
     🛠 由 <a href="https://github.com/magicbrian1206-maker/landing" target="_blank">燦坤華榮 AppleShop</a> 開源分享 ·
     所有處理在你的瀏覽器內完成,不會上傳任何資料
+    <br>
+    <span style="opacity:.6">
+      <span id="versionTag">載入中...</span> ·
+      <a href="https://github.com/magicbrian1206-maker/appleshop-starter/blob/main/CHANGELOG.md" target="_blank">更新紀錄</a>
+    </span>
   </p>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script src="generator.js"></script>
+<script>
+  // 顯示目前版本
+  fetch('VERSION').then(r => r.text()).then(v => {
+    document.getElementById('versionTag').textContent = '版本 v' + v.trim();
+  }).catch(() => {
+    document.getElementById('versionTag').textContent = '版本 dev';
+  });
+</script>
 </body>
 </html>
