@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>AppleShop Starter Kit · 一鍵開店產生器</title>
+<style>
+  * { box-sizing: border-box; }
+  :root {
+    --bg: #f5f5f7; --card: #fff; --text: #1d1d1f;
+    --gray: #86868b; --border: #d2d2d7;
+    --accent: #FFD500; --accent-dark: #1d1d1f;
+    --green: #34c759; --red: #ff3b30;
+  }
+  body {
+    margin: 0; font-family: -apple-system, "PingFang TC", "Microsoft JhengHei", sans-serif;
+    background: var(--bg); color: var(--text); line-height: 1.5;
+    padding: 24px 16px 80px;
+  }
+  .wrap { max-width: 720px; margin: 0 auto; }
+  header { text-align: center; margin-bottom: 32px; }
+  header h1 {
+    font-size: 32px; font-weight: 700; margin: 0 0 8px;
+    background: linear-gradient(135deg, #FFD500, #FFB800);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    display: inline-block;
+  }
+  header p { color: var(--gray); font-size: 15px; margin: 4px 0; }
+  .steps { display: flex; justify-content: center; gap: 6px; margin: 12px 0 0; font-size: 13px; color: var(--gray); flex-wrap: wrap; }
+  .steps span { display: inline-flex; align-items: center; gap: 4px; }
+  .steps span.active { color: var(--text); font-weight: 600; }
+  .step-num { background: var(--accent); color: #1d1d1f; border-radius: 50%; width: 20px; height: 20px; font-size: 12px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; }
+  .card { background: var(--card); border-radius: 18px; padding: 28px; margin-bottom: 16px; box-shadow: 0 2px 12px rgba(0,0,0,.04); }
+  .card h2 { margin: 0 0 4px; font-size: 18px; font-weight: 600; }
+  .card .hint { color: var(--gray); font-size: 13px; margin: 0 0 18px; }
+  .field { margin-bottom: 16px; }
+  .field label { display: block; font-size: 13px; color: var(--gray); margin-bottom: 6px; font-weight: 500; }
+  .field label .req { color: var(--red); }
+  .field input[type=text], .field input[type=url], .field input[type=email],
+  .field input[type=tel], .field input[type=color], .field textarea {
+    width: 100%; padding: 12px 14px; border: 1.5px solid var(--border);
+    border-radius: 10px; font-size: 15px; font-family: inherit;
+    background: #fafafa; transition: border-color .15s, background .15s;
+  }
+  .field input:focus, .field textarea:focus { outline: none; border-color: var(--accent); background: #fff; }
+  .field input[type=color] { height: 44px; padding: 4px; cursor: pointer; }
+  .field textarea { resize: vertical; min-height: 60px; }
+  .field .helper { font-size: 12px; color: var(--gray); margin-top: 4px; }
+  .field .helper a { color: #0071e3; }
+  .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  @media (max-width: 540px) { .row2 { grid-template-columns: 1fr; } }
+  .file-drop { border: 2px dashed var(--border); border-radius: 12px; padding: 20px 16px; text-align: center; cursor: pointer; background: #fafafa; transition: border-color .15s, background .15s; }
+  .file-drop:hover { border-color: var(--accent); background: #fff; }
+  .file-drop.has-file { border-color: var(--green); background: #f0faf2; }
+  .file-drop input { display: none; }
+  .file-drop .icon { font-size: 28px; }
+  .file-drop .name { font-size: 13px; color: var(--gray); margin-top: 4px; }
+  .toggle { display: flex; align-items: flex-start; gap: 10px; padding: 14px; border: 1.5px solid var(--border); border-radius: 10px; cursor: pointer; background: #fafafa; margin-bottom: 8px; }
+  .toggle:hover { background: #fff; }
+  .toggle input { width: 20px; height: 20px; accent-color: var(--accent); margin-top: 2px; }
+  .toggle .label { flex: 1; }
+  .toggle .label strong { display: block; font-weight: 600; }
+  .toggle .label small { color: var(--gray); font-size: 12px; }
+  button.primary { background: linear-gradient(135deg, #FFD500, #FFB800); color: #1d1d1f; border: none; padding: 16px 32px; border-radius: 14px; font-size: 17px; font-weight: 700; cursor: pointer; width: 100%; box-shadow: 0 4px 16px rgba(255,213,0,.3); transition: transform .12s, box-shadow .12s; font-family: inherit; }
+  button.primary:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(255,213,0,.4); }
+  button.primary:disabled { opacity: .5; cursor: not-allowed; transform: none; }
+  .result { display: none; }
+  .result.show { display: block; }
+  .success-icon { width: 64px; height: 64px; background: var(--green); border-radius: 50%; margin: 0 auto 16px; display: flex; align-items: center; justify-content: center; color: white; font-size: 36px; animation: pop .4s cubic-bezier(.34,1.56,.64,1); }
+  @keyframes pop { 0% { transform: scale(0); } 100% { transform: scale(1); } }
+  .download-btn { background: var(--accent-dark); color: var(--accent); border: none; padding: 14px 28px; border-radius: 12px; font-size: 16px; font-weight: 600; cursor: pointer; margin: 8px 0; font-family: inherit; }
+  .download-btn:hover { background: #000; }
+  .next-steps { background: #fff8d6; border-left: 4px solid var(--accent); padding: 16px 18px; border-radius: 8px; margin-top: 20px; font-size: 14px; }
+  .next-steps ol { margin: 8px 0 0; padding-left: 20px; }
+  .next-steps li { margin: 6px 0; }
+  .next-steps code { background: #1d1d1f; color: #FFD500; padding: 2px 6px; border-radius: 4px; font-size: 13px; }
+  .footer { text-align: center; color: var(--gray); font-size: 12px; margin-top: 32px; }
+  .footer a { color: inherit; }
+  .preview { margin-top: 12px; padding: 12px; background: #1d1d1f; color: #FFD500; border-radius: 8px; font-size: 12px; font-family: ui-monospace, "SF Mono", monospace; word-break: break-all; }
+  .preview .key { color: #86868b; }
+  .preview > div { margin: 2px 0; }
+  .err { background: #ffe8e6; border-left: 4px solid var(--red); padding: 10px 14px; border-radius: 6px; color: #c0271a; font-size: 13px; margin-top: 12px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>🍎 AppleShop Starter Kit</h1>
+    <p>填表 → 下載 → 5 分鐘擁有自家店的數位行銷網站</p>
+    <p style="font-size:13px;">📱 手機落地頁 · 🖼 A4 列印 DM · 📊 點擊統計儀表板 · 📧 週報 Email</p>
+    <div class="steps">
+      <span class="active"><span class="step-num">1</span>填表</span>
+      <span>→</span>
+      <span><span class="step-num">2</span>下載</span>
+      <span>→</span>
+      <span><span class="step-num">3</span>跟著 INSTALL.md 部署</span>
+    </div>
+  </header>
+
+  <form id="storeForm">
+    <section class="card">
+      <h2>🏪 店家基本資料</h2>
+      <p class="hint">這些會出現在落地頁、DM、儀表板、週報信</p>
+      <div class="field">
+        <label>店名 <span class="req">*</span></label>
+        <input type="text" name="storeName" required placeholder="例:燦坤華榮 AppleShop">
+        <div class="helper">建議格式:「品牌 + 分店 + AppleShop」</div>
+      </div>
+      <div class="field">
+        <label>副標(身分)</label>
+        <input type="text" name="subtitle" value="Apple 授權經銷夥伴">
+      </div>
+      <div class="field">
+        <label>主要品項</label>
+        <textarea name="items" rows="2">iPhone・Mac・iPad・Apple Watch 展示與諮詢・手機舊換新</textarea>
+      </div>
+      <div class="row2">
+        <div class="field">
+          <label>電話 <span class="req">*</span></label>
+          <input type="tel" name="phone" required placeholder="07-1234567">
+        </div>
+        <div class="field">
+          <label>店家信箱(收週報用)</label>
+          <input type="email" name="email" placeholder="store@gmail.com">
+        </div>
+      </div>
+      <div class="field">
+        <label>地址 <span class="req">*</span></label>
+        <input type="text" name="address" required placeholder="例:高雄市鼓山區華榮路 345 號">
+      </div>
+      <div class="field">
+        <label>營業時間 <span class="req">*</span></label>
+        <input type="text" name="hours" required value="每日 11:00–21:30">
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>🔗 三大行銷連結</h2>
+      <p class="hint">客戶會從你的 QR Code 進入落地頁,然後選擇要去哪一個</p>
+      <div class="field">
+        <label>LINE 加好友連結 <span class="req">*</span></label>
+        <input type="url" name="lineUrl" required placeholder="https://lin.ee/XXXXXX">
+        <div class="helper">LINE Official Account → 設定 → 加入好友指南 → 取得網址</div>
+      </div>
+      <div class="field">
+        <label>Facebook 粉絲團網址 <span class="req">*</span></label>
+        <input type="url" name="fbUrl" required placeholder="https://www.facebook.com/profile.php?id=...">
+      </div>
+      <div class="field">
+        <label>Google 地圖評論連結 <span class="req">*</span></label>
+        <input type="url" name="googleUrl" required placeholder="https://maps.app.goo.gl/...">
+        <div class="helper">Google 商家檔案 → 取得更多評論 → 分享連結</div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>🎨 視覺設定</h2>
+      <p class="hint">主色用在按鈕、儀表板、週報信頭</p>
+      <div class="row2">
+        <div class="field">
+          <label>主色(品牌色)</label>
+          <input type="color" name="brandColor" value="#FFD500">
+          <div class="helper">預設燦坤黃 #FFD500</div>
+        </div>
+        <div class="field">
+          <label>店面照片</label>
+          <label class="file-drop" id="photoDrop">
+            <input type="file" name="photo" accept="image/jpeg,image/png">
+            <div class="icon">📷</div>
+            <div class="name" id="photoName">點擊上傳(JPG / PNG)</div>
+          </label>
+          <div class="helper">會顯示在落地頁與 DM 上方,建議 16:9 橫式</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>🐙 GitHub 部署設定</h2>
+      <p class="hint">系統用 GitHub Pages 免費託管你的網站(永久免費)</p>
+      <div class="row2">
+        <div class="field">
+          <label>GitHub 帳號名 <span class="req">*</span></label>
+          <input type="text" name="ghOwner" required placeholder="例:your-username">
+          <div class="helper">沒有帳號?<a href="https://github.com/signup" target="_blank">去註冊(免費)</a></div>
+        </div>
+        <div class="field">
+          <label>Repo 名稱</label>
+          <input type="text" name="ghRepo" value="appleshop">
+          <div class="helper">建議 appleshop 或 landing</div>
+        </div>
+      </div>
+      <div class="preview" id="urlPreview">
+        <div><span class="key">📱 你的網站:</span> <span id="prevLanding">https://username.github.io/appleshop/</span></div>
+        <div><span class="key">📊 儀表板:</span> <span id="prevStats">https://username.github.io/appleshop/stats.html</span></div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>⚡ 進階選項</h2>
+      <label class="toggle">
+        <input type="checkbox" name="enableEmail" checked>
+        <div class="label">
+          <strong>📧 啟用週報 Email</strong>
+          <small>每週日 22:00 自動寄統計報表到你信箱(需設 Gmail App Password,部署時 INSTALL.md 會教)</small>
+        </div>
+      </label>
+      <label class="toggle">
+        <input type="checkbox" name="useSharedWorker" checked>
+        <div class="label">
+          <strong>🚀 共用點擊計數器(推薦)</strong>
+          <small>用現成的 Cloudflare Worker,你完全不用設定 Cloudflare。每家店有獨立 namespace,資料不會撞</small>
+        </div>
+      </label>
+    </section>
+
+    <button type="submit" class="primary" id="submitBtn">📦 產生我的店家網站包</button>
+    <div id="errorBox"></div>
+  </form>
+
+  <section class="card result" id="result">
+    <div class="success-icon">✓</div>
+    <h2 style="text-align:center;margin-bottom:8px;">產生成功!</h2>
+    <p style="text-align:center;color:var(--gray);margin-top:0;">已包好 <span id="fileCount">7</span> 個檔案,點擊下方按鈕下載</p>
+    <div style="text-align:center;">
+      <button type="button" class="download-btn" id="downloadBtn">⬇️ 下載 <span id="zipName">my-shop.zip</span></button>
+    </div>
+    <div class="next-steps">
+      <strong>📋 接下來照 INSTALL.md 五分鐘部署:</strong>
+      <ol>
+        <li>解壓縮 zip → 進入資料夾</li>
+        <li>在 GitHub 建一個新 repo(用剛才填的名字)</li>
+        <li>把所有檔案上傳到 repo</li>
+        <li>Repo 設定 → Pages → 啟用 GitHub Pages</li>
+        <li>等 30 秒 → 用手機掃 <code>qrcode-final.png</code> 測試 ✨</li>
+      </ol>
+    </div>
+  </section>
+
+  <p class="footer">
+    🛠 由 <a href="https://github.com/magicbrian1206-maker/landing" target="_blank">燦坤華榮 AppleShop</a> 開源分享 ·
+    所有處理在你的瀏覽器內完成,不會上傳任何資料
+  </p>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="generator.js"></script>
+</body>
+</html>

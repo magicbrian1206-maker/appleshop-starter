@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<title>燦坤華榮 AppleShop｜A4 DM</title>
+<style>
+  /* ====== A4 橫向列印設定 ====== */
+  @page {
+    size: 297mm 210mm;
+    margin: 0;
+  }
+  @media print {
+    html, body {
+      width: 297mm;
+      height: 210mm;
+      margin: 0 !important;
+      padding: 0 !important;
+      background: #fff !important;
+      overflow: hidden;
+    }
+    .no-print { display: none !important; }
+    .page {
+      box-shadow: none !important;
+      margin: 0 !important;
+      width: 297mm !important;
+      height: 210mm !important;
+      page-break-after: avoid;
+      page-break-inside: avoid;
+    }
+    /* 強制列印背景色與圖片 */
+    *, *::before, *::after {
+      -webkit-print-color-adjust: exact !important;
+      print-color-adjust: exact !important;
+      color-adjust: exact !important;
+    }
+    .photo-side img { filter: none !important; }
+  }
+  /* 螢幕也設定，雙保險 */
+  * {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  :root {
+    --yellow:       #FFD500;     /* 燦坤黃 */
+    --yellow-soft:  #FFF4B0;
+    --black:        #1d1d1f;     /* Apple 黑 */
+    --gray-50:      #fafafa;
+    --gray-100:     #f5f5f7;
+    --gray-300:     #d2d2d7;
+    --gray-500:     #6e6e73;
+    --line:   #06C755;
+    --fb:     #1877F2;
+    --google: #EA4335;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    font-family: -apple-system, BlinkMacSystemFont, "PingFang TC",
+                 "Microsoft JhengHei", "Helvetica Neue", sans-serif;
+    background: #e5e5ea;       /* 螢幕看起來像桌面，列印不會顯示 */
+    -webkit-font-smoothing: antialiased;
+    color: var(--black);
+  }
+
+  /* ====== 列印用按鈕（螢幕專用，列印時隱藏） ====== */
+  .print-bar {
+    position: fixed; top: 16px; right: 16px; z-index: 999;
+    display: flex; gap: 8px;
+  }
+  .print-bar button {
+    background: var(--black); color: #fff; border: 0;
+    padding: 10px 18px; border-radius: 10px; font-size: 14px;
+    font-weight: 600; cursor: pointer;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+  }
+  .print-bar button:hover { background: #333; }
+
+  /* ====== A4 紙本 ====== */
+  .page {
+    width: 297mm;
+    height: 210mm;
+    background: #fff;
+    margin: 16px auto;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.15);
+    position: relative;
+    overflow: hidden;
+    display: grid;
+    grid-template-columns: 5fr 4fr;
+  }
+
+  /* ====== 左側：照片區 ====== */
+  .photo-side {
+    position: relative;
+    background: #000;
+    overflow: hidden;
+  }
+  .photo-side img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    filter: brightness(0.78) contrast(1.05);
+  }
+  .photo-side::after {
+    content: "";
+    position: absolute; inset: 0;
+    background: linear-gradient(to top,
+      rgba(0,0,0,0.75) 0%,
+      rgba(0,0,0,0.45) 25%,
+      rgba(0,0,0,0) 55%);
+  }
+  .photo-overlay {
+    position: absolute;
+    inset: 0;
+    padding: 22mm 22mm 30mm;   /* 文字下移到地板區域 */
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    color: #fff;
+    z-index: 2;
+  }
+  .photo-bottom {
+    margin-left: 8mm;          /* 文字稍微向右偏移 */
+  }
+  .brand-top {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    margin-left: -8mm;            /* 微微往左偏，視覺上更置中 */
+  }
+  .apple-logo {
+    width: 38px; height: 38px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 30px;
+  }
+  .brand-name {
+    font-size: 16px;
+    letter-spacing: 4px;
+    font-weight: 600;
+    text-transform: uppercase;
+    color: var(--yellow);
+  }
+  .photo-bottom h2 {
+    font-size: 44px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    line-height: 1.15;
+    margin-bottom: 8px;
+  }
+  .photo-bottom .tagline {
+    font-size: 18px;
+    opacity: 0.9;
+    letter-spacing: 1px;
+    font-weight: 300;
+    line-height: 1.5;
+  }
+  .yellow-stripe-left {
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 8px;
+    background: var(--yellow);
+    z-index: 3;
+  }
+
+  /* ====== 右側：行動呼籲區 ====== */
+  .cta-side {
+    position: relative;
+    padding: 21mm 16mm 18mm;
+    background: #fff;
+    display: flex;
+    flex-direction: column;
+  }
+  .yellow-stripe-top {
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 8px;
+    background: var(--yellow);
+  }
+
+  .headline {
+    font-size: 32px;
+    font-weight: 700;
+    line-height: 1.2;
+    letter-spacing: 1px;
+    margin-bottom: 6px;
+  }
+  .headline .accent {
+    color: var(--black);
+    background: linear-gradient(180deg, transparent 60%, var(--yellow) 60%);
+    padding: 0 4px;
+  }
+  .sub {
+    font-size: 14px;
+    color: var(--gray-500);
+    margin-bottom: 14mm;
+    line-height: 1.6;
+  }
+
+  /* QR + 三個按鈕排版 */
+  .qr-block {
+    display: flex;
+    gap: 10mm;
+    align-items: center;
+    margin-bottom: 12mm;
+  }
+  .qr-frame {
+    flex: 0 0 auto;
+    width: 56mm;
+    height: 56mm;
+    background: #fff;
+    border: 4px solid var(--black);
+    border-radius: 14px;
+    padding: 4mm;
+    position: relative;
+  }
+  .qr-frame::before {
+    display: none;          /* 移除外圍黃色虛線（列印時會變灰塊） */
+  }
+  .qr-frame img {
+    width: 100%; height: 100%;
+    display: block;
+  }
+  .qr-cta {
+    flex: 1;
+    min-width: 0;
+  }
+  .qr-cta .scan-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px; height: 32px;
+    background: var(--yellow);
+    border-radius: 8px;
+    font-size: 18px;
+    margin-bottom: 8px;
+  }
+  .qr-cta h3 {
+    font-size: 22px;
+    font-weight: 700;
+    line-height: 1.25;
+    margin-bottom: 6px;
+  }
+  .qr-cta p {
+    font-size: 13px;
+    color: var(--gray-500);
+    line-height: 1.55;
+  }
+
+  .actions {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: auto;
+    margin-bottom: 8mm;
+  }
+  .action {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 11px 14px;
+    border-radius: 10px;
+    background: var(--gray-100);
+    border-left: 4px solid var(--gray-300);
+  }
+  .action.line   { border-left-color: var(--line); }
+  .action.fb     { border-left-color: var(--fb); }
+  .action.google { border-left-color: var(--google); }
+  .action .icon {
+    width: 32px; height: 32px;
+    display: flex; align-items: center; justify-content: center;
+    border-radius: 8px;
+    font-size: 18px;
+    color: #fff;
+    flex-shrink: 0;
+  }
+  .action.line   .icon { background: var(--line); }
+  .action.fb     .icon { background: var(--fb); }
+  .action.google .icon { background: linear-gradient(135deg, #EA4335 0%, #FBBC05 100%); }
+  .action .text {
+    flex: 1;
+    min-width: 0;
+    font-size: 13.5px;
+    line-height: 1.4;
+  }
+  .action .text strong {
+    display: block;
+    font-size: 14.5px;
+    font-weight: 700;
+    margin-bottom: 1px;
+    white-space: nowrap;            /* 標題不換行 */
+  }
+  .action .text span {
+    color: var(--gray-500);
+    font-size: 11.5px;
+    white-space: nowrap;            /* 描述也不換行 */
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: block;
+  }
+  .action .stars {
+    color: var(--google);
+    font-size: 13px;
+    letter-spacing: 1px;
+    font-weight: 700;
+  }
+
+  /* 底部資訊條 */
+  .info-bar {
+    border-top: 2px solid var(--yellow);
+    padding-top: 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 11px;
+    color: var(--gray-500);
+  }
+  .info-bar strong { color: var(--black); font-size: 12px; }
+</style>
+</head>
+<body>
+  <div class="print-bar no-print">
+    <button onclick="window.print()">🖨 列印 / 存成 PDF</button>
+  </div>
+
+  <article class="page">
+    <!-- 左側：照片 -->
+    <section class="photo-side">
+      <div class="yellow-stripe-left"></div>
+      <img src="store.jpg" alt="燦坤華榮 AppleShop 店面">
+      <div class="photo-overlay">
+        <div class="brand-top">
+          <div class="apple-logo"></div>
+          <div class="brand-name">Tsann Kuen × Apple</div>
+        </div>
+        <div class="photo-bottom">
+          <h2>燦坤華榮<br>AppleShop</h2>
+          <p class="tagline">Apple 授權經銷夥伴<br>iPhone・Mac・iPad・Apple Watch</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 右側：CTA -->
+    <section class="cta-side">
+      <div class="yellow-stripe-top"></div>
+
+      <h1 class="headline">
+        感謝您的光臨<br>
+        <span class="accent">請給我們鼓勵</span>
+      </h1>
+      <p class="sub">您的每一個小動作，都是我們持續用心服務的動力 🙏</p>
+
+      <div class="qr-block">
+        <div class="qr-frame">
+          <img src="qrcode-final.png" alt="掃描 QR Code">
+        </div>
+        <div class="qr-cta">
+          <div class="scan-icon">📱</div>
+          <h3>用手機掃描<br>一鍵完成</h3>
+          <p>打開相機<br>對準 QR Code<br>點選跳出的網址即可</p>
+        </div>
+      </div>
+
+      <div class="actions">
+        <div class="action line">
+          <div class="icon">💬</div>
+          <div class="text">
+            <strong>加入 LINE 好友</strong>
+            <span>新品、優惠、維修通知第一時間掌握</span>
+          </div>
+        </div>
+        <div class="action fb">
+          <div class="icon">👍</div>
+          <div class="text">
+            <strong>FB 粉絲團按讚</strong>
+            <span>分享 Apple 開箱與最新活動資訊</span>
+          </div>
+        </div>
+        <div class="action google">
+          <div class="icon">⭐</div>
+          <div class="text">
+            <strong>Google 給五顆星 <span class="stars">★★★★★</span></strong>
+            <span>您的肯定是我們最大的動力</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="info-bar">
+        <span><strong>📞 07-5527930</strong></span>
+        <span>📍 高雄市鼓山區華榮路 345 號</span>
+        <span>🕐 每日 11:00–21:30</span>
+      </div>
+    </section>
+  </article>
+</body>
+</html>

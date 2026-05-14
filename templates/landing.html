@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#000000">
+<title>燦坤華榮 AppleShop｜感謝您的支持</title>
+<meta property="og:title" content="燦坤華榮 AppleShop">
+<meta property="og:description" content="感謝您的光臨，請給我們一點鼓勵 🙏">
+<meta property="og:image" content="store.jpg">
+
+<!-- 簡易點擊計數器（Abacus，免費無需註冊；同時記錄日/週/月/終身） -->
+<script>
+  const COUNTER_NS = 'tsann-kuen-appleshop';
+  function _pad(n){ return n < 10 ? '0'+n : ''+n; }
+  function _isoWeek(d){
+    const date = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+    const dayNum = (date.getUTCDay() + 6) % 7;
+    date.setUTCDate(date.getUTCDate() - dayNum + 3);
+    const firstThursday = new Date(Date.UTC(date.getUTCFullYear(),0,4));
+    const week = 1 + Math.round(((date - firstThursday) / 86400000 - 3 + ((firstThursday.getUTCDay()+6)%7)) / 7);
+    return date.getUTCFullYear() + 'W' + _pad(week);
+  }
+  function _hit(key){
+    fetch(`https://tsann-counter.magicbrian1206.workers.dev/hit/${COUNTER_NS}/${key}`, {keepalive: true}).catch(()=>{});
+  }
+  function trackClick(label){
+    const k = label.toLowerCase();
+    const d = new Date();
+    const day   = `${d.getFullYear()}${_pad(d.getMonth()+1)}${_pad(d.getDate())}`;
+    const month = `${d.getFullYear()}${_pad(d.getMonth()+1)}`;
+    const week  = _isoWeek(d);
+    _hit(k);                       // 終身
+    _hit(`${k}-d-${day}`);         // 當日
+    _hit(`${k}-w-${week}`);        // 當週 (ISO)
+    _hit(`${k}-m-${month}`);       // 當月
+    if (typeof gtag === 'function') {
+      gtag('event', 'cta_click', { 'event_label': label });
+    }
+  }
+</script>
+
+<!-- Google Analytics 4 (將 G-XXXXXXXXXX 替換為你的 Measurement ID) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-XXXXXXXXXX');
+</script>
+
+<style>
+  :root {
+    --tsann-yellow: #FFD500;
+    --tsann-yellow-dark: #E6BE00;
+    --apple-gray: #1d1d1f;
+    --apple-text-secondary: #6e6e73;
+    --apple-divider: #d2d2d7;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "PingFang TC",
+                 "Microsoft JhengHei", "Helvetica Neue", sans-serif;
+    background: #f5f5f7;
+    color: var(--apple-gray);
+    min-height: 100vh;
+    min-height: 100dvh;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap {
+    max-width: 460px;
+    margin: 0 auto;
+    padding: 0 0 32px;
+    padding-bottom: max(32px, env(safe-area-inset-bottom));
+  }
+  .hero {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 4 / 3;
+    overflow: hidden;
+    background: #000;
+  }
+  .hero img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    animation: kenburns 18s ease-in-out infinite alternate;
+  }
+  @keyframes kenburns {
+    from { transform: scale(1.0); }
+    to   { transform: scale(1.08); }
+  }
+  .hero::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg,
+      rgba(0,0,0,0) 50%,
+      rgba(0,0,0,0.75) 100%);
+  }
+  .yellow-bar {
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 6px;
+    background: var(--tsann-yellow);
+    z-index: 4;
+  }
+  .hero-text {
+    position: absolute;
+    bottom: 14%;          /* 文字下移到照片地板區域 */
+    left: 0;
+    right: 0;
+    text-align: center;
+    color: #fff;
+    z-index: 2;
+    padding: 0 20px;
+  }
+  .hero-text .apple {
+    font-size: 26px;
+    line-height: 1;
+    margin-bottom: 6px;
+    text-shadow: 0 2px 8px rgba(0,0,0,0.4);
+  }
+  .hero-text h1 {
+    margin: 0;
+    font-size: 22px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    text-shadow: 0 2px 8px rgba(0,0,0,0.5);
+  }
+  .hero-text .badge {
+    display: inline-block;
+    margin-top: 8px;
+    padding: 4px 12px;
+    background: var(--tsann-yellow);
+    color: #1d1d1f;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    border-radius: 99px;
+  }
+  .card {
+    background: #fff;
+    margin: -24px 16px 0;
+    border-radius: 22px;
+    padding: 28px 22px 24px;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.08);
+    position: relative;
+    z-index: 3;
+    text-align: center;
+  }
+  .greeting {
+    font-size: 20px;
+    font-weight: 600;
+    margin: 0 0 6px;
+  }
+  .subtitle {
+    color: var(--apple-text-secondary);
+    font-size: 14.5px;
+    line-height: 1.55;
+    margin: 0 0 22px;
+  }
+  .divider {
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--apple-divider), transparent);
+    margin: 6px 0 18px;
+  }
+  .btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    width: 100%;
+    padding: 15px 18px;
+    border-radius: 14px;
+    font-size: 16.5px;
+    font-weight: 600;
+    text-decoration: none;
+    color: #fff;
+    margin-bottom: 11px;
+    transition: transform 0.15s ease, filter 0.15s ease;
+    border: none;
+    cursor: pointer;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+  .btn:active { transform: scale(0.97); filter: brightness(0.95); }
+  .btn-line   { background: #06C755; box-shadow: 0 4px 12px rgba(6,199,85,0.35); }
+  .btn-fb     { background: #1877F2; box-shadow: 0 4px 12px rgba(24,119,242,0.35); }
+  .btn-google { background: linear-gradient(135deg, #EA4335 0%, #FBBC05 100%);
+                box-shadow: 0 4px 12px rgba(234,67,53,0.35); }
+  .btn-icon { font-size: 20px; line-height: 1; }
+  .stars { letter-spacing: 1.5px; font-size: 16px; margin-left: 4px; }
+
+  .info {
+    margin-top: 22px;
+    padding: 18px 16px;
+    background: linear-gradient(135deg, #fffbe6 0%, #fff8d1 100%);
+    border-radius: 14px;
+    font-size: 13.5px;
+    color: var(--apple-gray);
+    line-height: 1.85;
+    text-align: left;
+  }
+  .info .store-name {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 700;
+    font-size: 15px;
+    margin-bottom: 8px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid var(--tsann-yellow);
+  }
+  .info .store-name::before {
+    content: "🍎";
+    font-size: 18px;
+  }
+  .info .row {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  .info .label {
+    color: var(--apple-text-secondary);
+    min-width: 56px;
+    font-size: 12.5px;
+  }
+  .info .val {
+    flex: 1;
+    color: var(--apple-gray);
+  }
+  .info a { color: #1d1d1f; text-decoration: none; border-bottom: 1px dashed #999; }
+
+  .footer {
+    text-align: center;
+    margin-top: 18px;
+    font-size: 11.5px;
+    color: #a1a1a6;
+  }
+  @media (max-width: 360px) {
+    .card { padding: 24px 18px; }
+    .greeting { font-size: 18px; }
+    .btn { font-size: 15.5px; padding: 14px 14px; }
+  }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <header class="hero">
+      <div class="yellow-bar"></div>
+      <img src="store.jpg" alt="燦坤華榮 AppleShop 店面"
+           onerror="this.style.display='none'">
+      <div class="hero-text">
+        <div class="apple"></div>
+        <h1>燦坤華榮 AppleShop</h1>
+        <span class="badge">APPLE 授權經銷</span>
+      </div>
+    </header>
+
+    <main class="card">
+      <p class="greeting">感謝您的光臨 🙏</p>
+      <p class="subtitle">您的每一個鼓勵<br>都是我們持續用心服務的動力</p>
+
+      <div class="divider"></div>
+
+      <a class="btn btn-line"
+         href="https://lin.ee/WDINrym"
+         onclick="trackClick('LINE')"
+         target="_blank" rel="noopener">
+        <span class="btn-icon">💬</span>
+        <span>加入 LINE 好友</span>
+      </a>
+
+      <a class="btn btn-fb"
+         href="https://www.facebook.com/profile.php?id=61586040699143"
+         onclick="trackClick('Facebook')"
+         target="_blank" rel="noopener">
+        <span class="btn-icon">👍</span>
+        <span>FB 粉絲團按讚</span>
+      </a>
+
+      <a class="btn btn-google"
+         href="https://maps.app.goo.gl/5Dxng1UvA6nAGvqn7?g_st=ic"
+         onclick="trackClick('Google')"
+         target="_blank" rel="noopener">
+        <span class="btn-icon">⭐</span>
+        <span>Google 給五顆星<span class="stars">★★★★★</span></span>
+      </a>
+
+      <div class="info">
+        <div class="store-name">燦坤華榮 AppleShop</div>
+        <div class="row"><span class="label">📞 電話</span><span class="val"><a href="tel:+88675527930">07-5527930</a></span></div>
+        <div class="row"><span class="label">📍 地址</span><span class="val"><a href="https://maps.google.com/?q=高雄市鼓山區華榮路345號" target="_blank" rel="noopener">高雄市鼓山區華榮路345號</a></span></div>
+        <div class="row"><span class="label">🕐 營業</span><span class="val">每日 11:00–21:30</span></div>
+        <div class="row"><span class="label">🛍 服務</span><span class="val">iPhone・Mac・iPad・Watch<br>展示與諮詢・手機舊換新</span></div>
+      </div>
+    </main>
+
+    <p class="footer">© 2026 燦坤華榮 AppleShop · Apple 授權經銷夥伴</p>
+  </div>
+</body>
+</html>

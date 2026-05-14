@@ -1,0 +1,1187 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#000000">
+<title>燦坤華榮 AppleShop · 活動紀錄</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<style>
+  :root {
+    --line:   #06C755;  --line-2: #00E37F;
+    --fb:     #1877F2;  --fb-2:   #4DA3FF;
+    --google: #EA4335;  --google-2: #FBBC05;
+    --yellow: #FFD500;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  html, body { background: #000; color: #fff; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display",
+                 "PingFang TC", "Microsoft JhengHei", sans-serif;
+    min-height: 100vh; min-height: 100dvh;
+    padding: 20px 16px;
+    padding-top: max(20px, env(safe-area-inset-top));
+    padding-bottom: max(20px, env(safe-area-inset-bottom));
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 460px; margin: 0 auto; }
+
+  /* ===== 桌面雙欄佈局（>= 900px） ===== */
+  @media (min-width: 900px) {
+    .wrap { max-width: 1000px; }
+    .main-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      align-items: start;
+    }
+    /* header / tabs / meta / 下載按鈕保持全寬 */
+    .full-width { grid-column: 1 / -1; }
+    /* 每一欄的「第一張卡」上方對齊（移除預設 margin-top） */
+    .main-grid > div > *:first-child {
+      margin-top: 0 !important;
+    }
+  }
+  /* ===== 寬螢幕三欄佈局（>= 1280px） ===== */
+  @media (min-width: 1280px) {
+    .wrap { max-width: 1380px; }
+    .main-grid {
+      grid-template-columns: 1fr 1.05fr 1fr;
+      gap: 14px;
+    }
+    .full-width { grid-column: 1 / -1; }
+    /* 三環縮小一點 */
+    .rings-wrap { width: 200px; height: 200px; }
+    .rings-center .total-num { font-size: 34px; }
+    .chart-wrap { height: 180px; }
+    .heat-cell { width: 12px; height: 12px; }
+    .heat-grid { grid-template-rows: repeat(7, 12px); grid-auto-columns: 12px; }
+    .stat { padding: 12px 14px; }
+    .stat .icon { width: 38px; height: 38px; font-size: 18px; }
+    .stat .text .desc { font-size: 18px; }
+  }
+  /* 手機/平板維持單欄 */
+  @media (max-width: 899px) {
+    .main-grid > * { grid-column: 1; }
+  }
+
+  /* 標題 */
+  header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 14px;
+  }
+  header .left h1 {
+    font-size: 26px; font-weight: 800; letter-spacing: -0.5px; line-height: 1.1;
+  }
+  header .left .date {
+    font-size: 12px; color: #ff453a; font-weight: 600; margin-top: 2px; letter-spacing: 0.5px;
+  }
+  header .avatar {
+    width: 38px; height: 38px;
+    background: linear-gradient(135deg, #FFD500, #FFB800);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 17px; color: #000; font-weight: 800;
+  }
+
+  /* 時間區間切換 Tab */
+  .tabs {
+    display: flex;
+    gap: 6px;
+    overflow-x: auto;
+    margin-bottom: 12px;
+    padding-bottom: 4px;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .tabs::-webkit-scrollbar { display: none; }
+  .tab {
+    flex-shrink: 0;
+    background: #1c1c1e;
+    color: #8e8e93;
+    border: 1px solid rgba(255,255,255,0.06);
+    padding: 8px 14px;
+    border-radius: 999px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.15s;
+    white-space: nowrap;
+  }
+  .tab:active { transform: scale(0.95); }
+  .tab.active {
+    background: linear-gradient(135deg, var(--yellow), #FFB800);
+    color: #000;
+    border-color: transparent;
+    box-shadow: 0 4px 14px rgba(255,213,0,0.3);
+  }
+
+  /* 三環卡片 */
+  .rings-card {
+    background: linear-gradient(180deg, #1c1c1e 0%, #0a0a0a 100%);
+    border-radius: 22px;
+    padding: 20px 16px 16px;
+    margin-bottom: 12px;
+    border: 1px solid rgba(255,255,255,0.06);
+  }
+  .period-label {
+    text-align: center;
+    font-size: 11px;
+    color: #8e8e93;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+  .period-label .name { color: #FFD500; font-weight: 700; }
+  .rings-wrap {
+    position: relative;
+    width: 230px; height: 230px;
+    margin: 0 auto 10px;
+  }
+  .rings-wrap svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+  .ring-bg { fill: none; stroke-linecap: round; }
+  .ring-fg {
+    fill: none;
+    stroke-linecap: round;
+    transition: stroke-dashoffset 0.9s cubic-bezier(0.25, 1, 0.5, 1);
+    filter: drop-shadow(0 0 6px currentColor);
+  }
+  .rings-center {
+    position: absolute; inset: 0;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    pointer-events: none;
+  }
+  .rings-center .total-num {
+    font-size: 40px; font-weight: 800; line-height: 1;
+    font-feature-settings: "tnum"; color: #fff;
+  }
+  .rings-center .total-label {
+    font-size: 10px; color: #8e8e93; margin-top: 4px;
+    letter-spacing: 1.5px; text-transform: uppercase;
+  }
+
+  .legend {
+    display: grid; grid-template-columns: 1fr 1fr 1fr;
+    gap: 8px; text-align: center;
+  }
+  .legend .item .dot {
+    width: 10px; height: 10px; border-radius: 50%;
+    margin: 0 auto 4px;
+  }
+  .legend .line   .dot { background: var(--line); box-shadow: 0 0 8px var(--line); }
+  .legend .fb     .dot { background: var(--fb); box-shadow: 0 0 8px var(--fb); }
+  .legend .google .dot { background: var(--google-2); box-shadow: 0 0 8px var(--google-2); }
+  .legend .item .name { font-size: 11px; color: #8e8e93; letter-spacing: 0.5px; }
+  .legend .item .v {
+    font-size: 14px; font-weight: 700; margin-top: 1px;
+    font-feature-settings: "tnum";
+  }
+
+  /* 個別卡片 */
+  .stat {
+    background: #1c1c1e;
+    border-radius: 16px;
+    padding: 14px 16px;
+    margin-bottom: 10px;
+    display: flex; align-items: center; gap: 14px;
+    border: 1px solid rgba(255,255,255,0.05);
+  }
+  .stat .icon {
+    width: 44px; height: 44px;
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px; flex-shrink: 0; color: #fff;
+  }
+  .stat.line   .icon { background: var(--line); box-shadow: 0 0 14px rgba(6,199,85,0.4); }
+  .stat.fb     .icon { background: var(--fb);   box-shadow: 0 0 14px rgba(24,119,242,0.4); }
+  .stat.google .icon { background: linear-gradient(135deg, #EA4335 0%, #FBBC05 100%);
+                       box-shadow: 0 0 14px rgba(234,67,53,0.4); }
+  .stat .text { flex: 1; min-width: 0; }
+  .stat .text .name {
+    font-size: 13px; color: #8e8e93;
+    letter-spacing: 0.5px; margin-bottom: 2px;
+  }
+  .stat .text .desc {
+    font-size: 22px; font-weight: 800; line-height: 1.1;
+    font-feature-settings: "tnum";
+  }
+  .stat .text .desc .unit {
+    font-size: 12px; color: #8e8e93; font-weight: 500; margin-left: 4px;
+  }
+  .stat .progress { text-align: right; flex-shrink: 0; }
+  .stat .progress .pct {
+    font-size: 18px; font-weight: 700; font-feature-settings: "tnum";
+  }
+  .stat.line   .progress .pct { color: var(--line-2); }
+  .stat.fb     .progress .pct { color: var(--fb-2); }
+  .stat.google .progress .pct { color: var(--google-2); }
+  .stat .progress .of { font-size: 10px; color: #8e8e93; }
+
+  /* 工具列 */
+  .toolbar { display: flex; gap: 8px; margin-top: 14px; }
+  .tbtn {
+    flex: 1;
+    background: #1c1c1e;
+    color: #fff;
+    border: 1px solid rgba(255,255,255,0.08);
+    padding: 12px;
+    border-radius: 12px;
+    font-size: 13px; font-weight: 600;
+    cursor: pointer; font-family: inherit;
+    transition: all 0.15s;
+  }
+  .tbtn:active { transform: scale(0.97); }
+  .tbtn.primary {
+    background: linear-gradient(135deg, #FFD500, #FFB800);
+    color: #000; border-color: transparent;
+  }
+
+  .meta { text-align: center; color: #6c6c70; font-size: 11px; margin-top: 12px; }
+
+  /* ===== 月曆 ===== */
+  .cal-card {
+    background: #1c1c1e;
+    border-radius: 18px;
+    padding: 16px;
+    margin-top: 14px;
+    border: 1px solid rgba(255,255,255,0.06);
+  }
+  .cal-head {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 12px;
+  }
+  .cal-head h3 {
+    font-size: 16px; font-weight: 700; letter-spacing: 0.5px;
+  }
+  .cal-nav {
+    display: flex; gap: 4px;
+  }
+  .cal-nav button {
+    width: 32px; height: 32px;
+    background: #2c2c2e;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-size: 16px;
+    cursor: pointer;
+    font-family: inherit;
+  }
+  .cal-nav button:active { transform: scale(0.92); }
+  .cal-nav button:disabled { opacity: 0.3; cursor: not-allowed; }
+
+  .cal-weekdays {
+    display: grid; grid-template-columns: repeat(7, 1fr);
+    text-align: center; font-size: 11px;
+    color: #8e8e93; margin-bottom: 6px;
+  }
+  .cal-weekdays div { padding: 4px 0; }
+  .cal-weekdays div.weekend { color: #ff453a; }
+
+  .cal-grid {
+    display: grid; grid-template-columns: repeat(7, 1fr);
+    gap: 4px;
+  }
+  .cal-cell {
+    aspect-ratio: 1;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    background: transparent;
+    border: none;
+    border-radius: 10px;
+    color: #fff;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+    position: relative;
+    transition: background 0.15s;
+  }
+  .cal-cell:active { transform: scale(0.92); }
+  .cal-cell.empty { cursor: default; pointer-events: none; }
+  .cal-cell.future { color: #3a3a3c; cursor: not-allowed; pointer-events: none; }
+  .cal-cell.today { color: #FFD500; }
+  .cal-cell:not(.empty):not(.future):hover { background: rgba(255,255,255,0.08); }
+  .cal-cell.selected {
+    background: linear-gradient(135deg, #FFD500, #FFB800);
+    color: #000;
+  }
+  .cal-cell.selected.today { color: #000; }
+  .cal-cell .activity {
+    position: absolute;
+    bottom: 4px;
+    width: 4px; height: 4px;
+    border-radius: 50%;
+    background: #FFD500;
+    box-shadow: 0 0 4px #FFD500;
+  }
+  .cal-cell.selected .activity { display: none; }
+
+  /* 日明細 */
+  .cal-detail {
+    margin-top: 14px;
+    padding-top: 14px;
+    border-top: 1px solid rgba(255,255,255,0.08);
+  }
+  .cal-detail .day-title {
+    font-size: 18px; font-weight: 700;
+    margin-bottom: 10px;
+    color: #fff;
+  }
+  .cal-detail .day-title .badge {
+    display: inline-block;
+    background: rgba(255,213,0,0.2);
+    color: #FFD500;
+    padding: 2px 8px;
+    border-radius: 6px;
+    font-size: 12px;
+    margin-left: 6px;
+    vertical-align: middle;
+  }
+  .cal-detail .day-rows {
+    display: flex; flex-direction: column; gap: 6px;
+  }
+  .cal-detail .day-row {
+    display: flex; align-items: center; gap: 12px;
+    padding: 10px 12px;
+    background: #2c2c2e;
+    border-radius: 10px;
+    border-left: 3px solid var(--gray-500);
+  }
+  .cal-detail .day-row.line   { border-left-color: var(--line); }
+  .cal-detail .day-row.fb     { border-left-color: var(--fb); }
+  .cal-detail .day-row.google { border-left-color: var(--google); }
+  .cal-detail .day-row .ic { font-size: 18px; width: 24px; text-align: center; }
+  .cal-detail .day-row .nm { flex: 1; font-size: 13px; color: #c7c7cc; }
+  .cal-detail .day-row .vl {
+    font-size: 17px; font-weight: 800;
+    font-feature-settings: "tnum";
+  }
+  .cal-detail .day-row.line   .vl { color: var(--line-2); }
+  .cal-detail .day-row.fb     .vl { color: var(--fb-2); }
+  .cal-detail .day-row.google .vl { color: var(--google-2); }
+  .cal-detail .day-row .vl .u { font-size: 11px; color: #8e8e93; font-weight: 500; margin-left: 2px; }
+  .cal-detail .day-total {
+    margin-top: 10px;
+    padding: 10px 12px;
+    background: linear-gradient(135deg, rgba(255,213,0,0.15), rgba(255,184,0,0.05));
+    border-radius: 10px;
+    border: 1px solid rgba(255,213,0,0.2);
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .cal-detail .day-total .lb { font-size: 13px; color: #FFD500; font-weight: 600; }
+  .cal-detail .day-total .vl { font-size: 22px; font-weight: 800; color: #fff; font-feature-settings: "tnum"; }
+
+  /* ===== 圖表卡片 ===== */
+  .chart-card {
+    background: #1c1c1e;
+    border-radius: 18px;
+    padding: 16px;
+    margin-top: 14px;
+    border: 1px solid rgba(255,255,255,0.06);
+  }
+  .chart-card h3 {
+    font-size: 16px; font-weight: 700;
+    margin-bottom: 12px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .chart-card h3 .icon { font-size: 18px; }
+  .chart-wrap { position: relative; height: 220px; }
+
+  /* ===== 熱力圖 ===== */
+  .heat-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; padding-bottom: 4px; }
+  .heat-wrap::-webkit-scrollbar { height: 4px; }
+  .heat-wrap::-webkit-scrollbar-thumb { background: #3a3a3c; border-radius: 2px; }
+  .heat-grid {
+    display: inline-grid;
+    grid-template-rows: repeat(7, 14px);
+    grid-auto-flow: column;
+    grid-auto-columns: 14px;
+    gap: 3px;
+    padding: 4px 0;
+  }
+  .heat-cell {
+    width: 14px; height: 14px;
+    border-radius: 3px;
+    background: #2a2a2c;
+    cursor: pointer;
+    transition: transform 0.1s;
+  }
+  .heat-cell:hover { transform: scale(1.4); }
+  .heat-cell.l1 { background: rgba(255,213,0,0.25); }
+  .heat-cell.l2 { background: rgba(255,213,0,0.5); }
+  .heat-cell.l3 { background: rgba(255,213,0,0.75); }
+  .heat-cell.l4 { background: #FFD500; box-shadow: 0 0 4px #FFD500; }
+  .heat-legend {
+    display: flex; align-items: center; justify-content: flex-end;
+    gap: 4px; font-size: 10px; color: #8e8e93;
+    margin-top: 6px;
+  }
+  .heat-legend .swatch {
+    width: 10px; height: 10px; border-radius: 2px;
+  }
+  .heat-tooltip {
+    position: absolute;
+    background: #000;
+    border: 1px solid rgba(255,255,255,0.2);
+    color: #fff;
+    padding: 6px 10px;
+    border-radius: 6px;
+    font-size: 11px;
+    pointer-events: none;
+    white-space: nowrap;
+    z-index: 100;
+    transform: translate(-50%, -130%);
+    opacity: 0;
+    transition: opacity 0.15s;
+  }
+  .heat-tooltip.show { opacity: 1; }
+
+  /* ===== Excel 下載按鈕 ===== */
+  .download-btn {
+    width: 100%;
+    background: linear-gradient(135deg, #1d6f42, #14532d);
+    color: #fff;
+    border: none;
+    padding: 14px;
+    border-radius: 12px;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    font-family: inherit;
+    margin-top: 14px;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    transition: all 0.15s;
+  }
+  .download-btn:active { transform: scale(0.97); }
+  .download-btn:hover { filter: brightness(1.1); }
+
+  @keyframes bump {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.18); color: #FFD500; }
+    100% { transform: scale(1); }
+  }
+  .bump { animation: bump 0.4s ease; }
+  .loading { opacity: 0.5; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="full-width">
+    <div class="left">
+      <h1>活動紀錄</h1>
+      <div class="date" id="today-date">— —</div>
+    </div>
+    <div class="avatar">🍎</div>
+  </header>
+
+  <!-- 時間切換 -->
+  <div class="tabs full-width" id="tabs"></div>
+
+  <!-- 雙欄主內容 -->
+  <div class="main-grid">
+
+    <!-- ============ 左欄：核心數據 ============ -->
+    <div>
+
+  <!-- 三環卡片 -->
+  <div class="rings-card" id="rings-card">
+    <div class="period-label">
+      期間：<span class="name" id="period-name">今日</span>　·　目標 <span id="period-goal">10</span>
+    </div>
+    <div class="rings-wrap">
+      <svg viewBox="0 0 240 240">
+        <circle class="ring-bg" cx="120" cy="120" r="105"
+          stroke="rgba(6,199,85,0.18)" stroke-width="20"/>
+        <circle class="ring-fg" id="ring-line"
+          cx="120" cy="120" r="105"
+          stroke="#06C755" stroke-width="20"
+          stroke-dasharray="659.7" stroke-dashoffset="659.7"
+          style="color: #06C755"/>
+
+        <circle class="ring-bg" cx="120" cy="120" r="78"
+          stroke="rgba(24,119,242,0.18)" stroke-width="20"/>
+        <circle class="ring-fg" id="ring-fb"
+          cx="120" cy="120" r="78"
+          stroke="#1877F2" stroke-width="20"
+          stroke-dasharray="490.1" stroke-dashoffset="490.1"
+          style="color: #1877F2"/>
+
+        <defs>
+          <linearGradient id="gg" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#EA4335"/>
+            <stop offset="100%" stop-color="#FBBC05"/>
+          </linearGradient>
+        </defs>
+        <circle class="ring-bg" cx="120" cy="120" r="51"
+          stroke="rgba(234,67,53,0.18)" stroke-width="20"/>
+        <circle class="ring-fg" id="ring-google"
+          cx="120" cy="120" r="51"
+          stroke="url(#gg)" stroke-width="20"
+          stroke-dasharray="320.4" stroke-dashoffset="320.4"
+          style="color: #EA4335"/>
+      </svg>
+
+      <div class="rings-center">
+        <div class="total-num" id="total">0</div>
+        <div class="total-label">TOTAL</div>
+      </div>
+    </div>
+
+    <div class="legend">
+      <div class="item line"><div class="dot"></div><div class="name">LINE</div><div class="v" id="leg-line">0</div></div>
+      <div class="item fb"><div class="dot"></div><div class="name">FB</div><div class="v" id="leg-fb">0</div></div>
+      <div class="item google"><div class="dot"></div><div class="name">GOOGLE</div><div class="v" id="leg-google">0</div></div>
+    </div>
+  </div>
+
+  <div class="stat line">
+    <div class="icon">💬</div>
+    <div class="text">
+      <div class="name">加入 LINE 好友</div>
+      <div class="desc"><span id="d-line">0</span><span class="unit">次</span></div>
+    </div>
+    <div class="progress"><div class="pct" id="p-line">0%</div><div class="of" id="g-line">目標 10</div></div>
+  </div>
+
+  <div class="stat fb">
+    <div class="icon">👍</div>
+    <div class="text">
+      <div class="name">FB 粉絲團按讚</div>
+      <div class="desc"><span id="d-fb">0</span><span class="unit">次</span></div>
+    </div>
+    <div class="progress"><div class="pct" id="p-fb">0%</div><div class="of" id="g-fb">目標 10</div></div>
+  </div>
+
+  <div class="stat google">
+    <div class="icon">⭐</div>
+    <div class="text">
+      <div class="name">Google 五星好評</div>
+      <div class="desc"><span id="d-google">0</span><span class="unit">次</span></div>
+    </div>
+    <div class="progress"><div class="pct" id="p-google">0%</div><div class="of" id="g-google">目標 10</div></div>
+  </div>
+
+  <div class="toolbar">
+    <button class="tbtn primary" onclick="loadAll(true)">🔄 重新整理</button>
+    <button class="tbtn" onclick="window.open('https://magicbrian1206-maker.github.io/landing/','_blank')">🔗 落地頁</button>
+  </div>
+
+  <div class="meta" id="meta">資料載入中...</div>
+
+    </div>  <!-- 左欄結束 -->
+
+    <!-- ============ 中欄：月曆 + 折線圖 ============ -->
+    <div>
+
+  <!-- ===== 月曆 ===== -->
+  <div class="cal-card">
+    <div class="cal-head">
+      <h3 id="cal-title">— —</h3>
+      <div class="cal-nav">
+        <button id="cal-prev" aria-label="上個月">‹</button>
+        <button id="cal-today" aria-label="今天" style="width:auto; padding:0 10px; font-size:12px;">今天</button>
+        <button id="cal-next" aria-label="下個月">›</button>
+      </div>
+    </div>
+
+    <div class="cal-weekdays">
+      <div class="weekend">日</div><div>一</div><div>二</div><div>三</div><div>四</div><div>五</div><div class="weekend">六</div>
+    </div>
+    <div class="cal-grid" id="cal-grid"></div>
+
+    <div class="cal-detail" id="cal-detail">
+      <div class="day-title" id="day-title">選擇日期查看明細</div>
+      <div class="day-rows">
+        <div class="day-row line">
+          <div class="ic">💬</div>
+          <div class="nm">加入 LINE 好友</div>
+          <div class="vl"><span id="dc-line">—</span><span class="u">次</span></div>
+        </div>
+        <div class="day-row fb">
+          <div class="ic">👍</div>
+          <div class="nm">FB 粉絲團按讚</div>
+          <div class="vl"><span id="dc-fb">—</span><span class="u">次</span></div>
+        </div>
+        <div class="day-row google">
+          <div class="ic">⭐</div>
+          <div class="nm">Google 五星好評</div>
+          <div class="vl"><span id="dc-google">—</span><span class="u">次</span></div>
+        </div>
+      </div>
+      <div class="day-total">
+        <div class="lb">當日總計</div>
+        <div class="vl" id="dc-total">—</div>
+      </div>
+    </div>
+  </div>
+
+    </div>  <!-- 中欄結束 -->
+
+    <!-- ============ 右欄：熱力圖 + 折線圖 + Excel ============ -->
+    <div>
+
+  <!-- ===== 熱力圖 ===== -->
+  <div class="chart-card">
+    <h3><span class="icon">🔥</span>近 12 週熱力圖</h3>
+    <div class="heat-wrap" style="position:relative;">
+      <div class="heat-grid" id="heatGrid"></div>
+      <div class="heat-tooltip" id="heatTip"></div>
+    </div>
+    <div class="heat-legend">
+      少 <span class="swatch" style="background:#2a2a2c"></span>
+      <span class="swatch" style="background:rgba(255,213,0,0.25)"></span>
+      <span class="swatch" style="background:rgba(255,213,0,0.5)"></span>
+      <span class="swatch" style="background:rgba(255,213,0,0.75)"></span>
+      <span class="swatch" style="background:#FFD500"></span> 多
+    </div>
+  </div>
+
+  <!-- ===== 折線圖（移到右欄，與熱力圖並排） ===== -->
+  <div class="chart-card">
+    <h3><span class="icon">📈</span>近 30 日趨勢</h3>
+    <div class="chart-wrap"><canvas id="lineChart"></canvas></div>
+  </div>
+
+  <!-- ===== Excel 下載 ===== -->
+  <button class="download-btn" onclick="exportExcel()">
+    <span>📊</span><span>下載完整紀錄 Excel</span>
+  </button>
+
+    </div>  <!-- 右欄結束 -->
+
+  </div>  <!-- main-grid 結束 -->
+
+</div>
+
+<script>
+const NS = 'tsann-kuen-appleshop';
+const BRANDS = ['line', 'fb', 'google'];
+// Abacus 鍵長度至少 3 字元，因此 fb 的資料鍵使用 'facebook'（UI 用 fb，資料用 facebook）
+const DATA_KEY = { line: 'line', fb: 'facebook', google: 'google' };
+const CIRCS = { line: 659.7, fb: 490.1, google: 320.4 };
+
+// 抓計數器一個 key 的值（不存在回 0）
+// Cloudflare Worker 後端，無 rate limit，簡單直接
+const _fetchCache = new Map();
+const API_BASE = 'https://tsann-counter.magicbrian1206.workers.dev';
+
+async function fetchKey(key) {
+  if (_fetchCache.has(key)) return _fetchCache.get(key);
+  const promise = (async () => {
+    try {
+      const r = await fetch(`${API_BASE}/get/${NS}/${key}`);
+      if (r.status === 404) return 0;
+      if (!r.ok) return 0;
+      const j = await r.json();
+      if (j.error) return 0;
+      return j.value ?? 0;
+    } catch(e) {
+      _fetchCache.delete(key);
+      return 0;
+    }
+  })();
+  _fetchCache.set(key, promise);
+  return promise;
+}
+function clearFetchCache(){ _fetchCache.clear(); }
+
+// 日期工具
+const pad = n => n < 10 ? '0'+n : ''+n;
+function dayKey(d){ return `${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}`; }
+function monthKey(d){ return `${d.getFullYear()}${pad(d.getMonth()+1)}`; }
+function isoWeek(d){
+  const dt = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+  const dn = (dt.getUTCDay() + 6) % 7;
+  dt.setUTCDate(dt.getUTCDate() - dn + 3);
+  const ft = new Date(Date.UTC(dt.getUTCFullYear(),0,4));
+  const w = 1 + Math.round(((dt - ft)/86400000 - 3 + ((ft.getUTCDay()+6)%7)) / 7);
+  return dt.getUTCFullYear() + 'W' + pad(w);
+}
+function lastNDays(n){
+  const arr = [];
+  for (let i = 0; i < n; i++) {
+    const d = new Date();
+    d.setDate(d.getDate() - i);
+    arr.push(dayKey(d));
+  }
+  return arr;
+}
+function lastNMonths(n){
+  const arr = [];
+  for (let i = 0; i < n; i++) {
+    const d = new Date();
+    d.setMonth(d.getMonth() - i);
+    arr.push(monthKey(d));
+  }
+  return arr;
+}
+
+// 取一個 brand 在某段期間的總和
+async function sumKeys(brand, keys) {
+  const vals = await Promise.all(keys.map(k => fetchKey(k)));
+  return vals.reduce((a,b)=>a+b, 0);
+}
+
+// 取得某 brand 在某 period 的計數
+async function getCount(brand, period) {
+  const dk = DATA_KEY[brand];
+  const today = new Date();
+  if (period === 'today') {
+    return fetchKey(`${dk}-d-${dayKey(today)}`);
+  }
+  if (period === 'week') {
+    return fetchKey(`${dk}-w-${isoWeek(today)}`);
+  }
+  if (period === 'month') {
+    return fetchKey(`${dk}-m-${monthKey(today)}`);
+  }
+  if (period === '3m') {
+    return sumKeys(brand, lastNMonths(3).map(m => `${dk}-m-${m}`));
+  }
+  if (period === '6m') {
+    return sumKeys(brand, lastNMonths(6).map(m => `${dk}-m-${m}`));
+  }
+  if (period === '1y') {
+    return sumKeys(brand, lastNMonths(12).map(m => `${dk}-m-${m}`));
+  }
+  if (period === 'total') {
+    return fetchKey(dk);
+  }
+  return 0;
+}
+
+// 期間設定
+const PERIODS = [
+  { id: 'today', label: '今日',   goal: 5 },
+  { id: 'week',  label: '本週',   goal: 25 },
+  { id: 'month', label: '本月',   goal: 50 },
+  { id: '3m',    label: '3 個月', goal: 150 },
+  { id: '6m',    label: '半年',   goal: 300 },
+  { id: '1y',    label: '一年',   goal: 600 },
+  { id: 'total', label: '總計',   goal: 1000 },
+];
+
+let currentPeriod = 'today';
+const cache = {};
+
+// 渲染 tab
+function renderTabs(){
+  const t = document.getElementById('tabs');
+  t.innerHTML = '';
+  PERIODS.forEach(p => {
+    const b = document.createElement('button');
+    b.className = 'tab' + (p.id === currentPeriod ? ' active' : '');
+    b.textContent = p.label;
+    b.onclick = () => switchPeriod(p.id);
+    t.appendChild(b);
+  });
+}
+
+async function switchPeriod(id){
+  currentPeriod = id;
+  renderTabs();
+  await renderPeriod(id);
+}
+
+function bump(id){
+  const el = document.getElementById(id);
+  el.classList.add('bump');
+  setTimeout(()=>el.classList.remove('bump'), 400);
+}
+
+const prev = {};
+async function renderPeriod(id, force=false){
+  document.getElementById('rings-card').classList.add('loading');
+  const period = PERIODS.find(p => p.id === id);
+  document.getElementById('period-name').textContent = period.label;
+  document.getElementById('period-goal').textContent = period.goal;
+
+  // 抓 3 個 brand 的數據
+  const data = {};
+  if (cache[id] && !force) {
+    Object.assign(data, cache[id]);
+  } else {
+    const counts = await Promise.all(BRANDS.map(b => getCount(b, id)));
+    BRANDS.forEach((b,i) => data[b] = counts[i]);
+    cache[id] = data;
+  }
+
+  let total = 0;
+  BRANDS.forEach(b => {
+    const v = data[b];
+    total += v;
+
+    // 環
+    const ring = document.getElementById(`ring-${b}`);
+    const circ = CIRCS[b];
+    const pct = Math.min(v / period.goal, 1);
+    ring.style.strokeDashoffset = circ - circ * pct;
+
+    // Legend
+    document.getElementById(`leg-${b}`).textContent = v.toLocaleString();
+
+    // Detail card
+    const dEl = document.getElementById(`d-${b}`);
+    const newTxt = v.toLocaleString();
+    if (dEl.textContent !== newTxt && prev[b] !== undefined) bump(`d-${b}`);
+    dEl.textContent = newTxt;
+    document.getElementById(`p-${b}`).textContent =
+      Math.round(Math.min(v / period.goal * 100, 999)) + '%';
+    document.getElementById(`g-${b}`).textContent = `目標 ${period.goal}`;
+    prev[b] = v;
+  });
+
+  const tEl = document.getElementById('total');
+  if (tEl.textContent != total.toLocaleString()) {
+    tEl.textContent = total.toLocaleString();
+    bump('total');
+  }
+
+  // 更新時間
+  const now = new Date();
+  const wk = ['日','一','二','三','四','五','六'][now.getDay()];
+  document.getElementById('today-date').textContent =
+    `${now.toLocaleDateString('zh-TW',{month:'long',day:'numeric'})} 星期${wk}`;
+  document.getElementById('meta').textContent =
+    `最後更新：${now.toLocaleTimeString('zh-TW',{hour12:false})}　·　每 60 秒自動更新`;
+
+  document.getElementById('rings-card').classList.remove('loading');
+}
+
+async function loadAll(force=false){
+  if (force) {
+    Object.keys(cache).forEach(k => delete cache[k]);
+    clearFetchCache();
+  }
+  await renderPeriod(currentPeriod, force);
+  // 同步刷新月曆 + 當天明細 + 圖表
+  if (typeof selectedDate !== 'undefined' && selectedDate) {
+    await loadDayDetail(selectedDate);
+  }
+  if (typeof renderCalendar === 'function') renderCalendar();
+  if (typeof renderLineChart === 'function') renderLineChart();
+  if (typeof renderHeatmap === 'function') renderHeatmap();
+}
+
+renderTabs();
+loadAll();
+setInterval(() => loadAll(true), 60000);
+
+// =============== 月曆 ===============
+let calYear, calMonth, selectedDate;
+
+function sameDay(a, b){
+  return a.getFullYear()===b.getFullYear() && a.getMonth()===b.getMonth() && a.getDate()===b.getDate();
+}
+
+async function renderCalendar(){
+  const today = new Date();
+  const firstDay = new Date(calYear, calMonth, 1);
+  const lastDay = new Date(calYear, calMonth+1, 0);
+  const daysInMonth = lastDay.getDate();
+  const startDow = firstDay.getDay(); // 0=Sun
+
+  const monthNames = ['一月','二月','三月','四月','五月','六月','七月','八月','九月','十月','十一月','十二月'];
+  document.getElementById('cal-title').textContent = `${calYear} 年 ${monthNames[calMonth]}`;
+  document.getElementById('cal-next').disabled =
+    (calYear > today.getFullYear()) || (calYear === today.getFullYear() && calMonth >= today.getMonth());
+
+  const grid = document.getElementById('cal-grid');
+  grid.innerHTML = '';
+
+  // 前置空格
+  for (let i = 0; i < startDow; i++) {
+    const el = document.createElement('div');
+    el.className = 'cal-cell empty';
+    grid.appendChild(el);
+  }
+
+  // 收集當月所有日期需要查詢的 keys，用於背景顯示活動點
+  const visibleDays = [];
+
+  for (let d = 1; d <= daysInMonth; d++) {
+    const date = new Date(calYear, calMonth, d);
+    const isFuture = date > today && !sameDay(date, today);
+    const isToday = sameDay(date, today);
+    const isSelected = selectedDate && sameDay(date, selectedDate);
+
+    const btn = document.createElement('button');
+    btn.className = 'cal-cell';
+    if (isFuture) btn.classList.add('future');
+    if (isToday) btn.classList.add('today');
+    if (isSelected) btn.classList.add('selected');
+    btn.textContent = d;
+    btn.dataset.day = d;
+
+    if (!isFuture) {
+      btn.addEventListener('click', () => selectDate(date));
+      visibleDays.push({ d, date, btn });
+    }
+    grid.appendChild(btn);
+  }
+
+  // 背景查詢每天總點擊數，顯示活動點
+  visibleDays.forEach(async ({d, date, btn}) => {
+    const key = `${date.getFullYear()}${pad(date.getMonth()+1)}${pad(date.getDate())}`;
+    const counts = await Promise.all(BRANDS.map(b => fetchKey(`${DATA_KEY[b]}-d-${key}`)));
+    const total = counts.reduce((a,b)=>a+b, 0);
+    if (total > 0 && !btn.classList.contains('selected')) {
+      const dot = document.createElement('div');
+      dot.className = 'activity';
+      btn.appendChild(dot);
+    }
+  });
+}
+
+async function selectDate(date){
+  selectedDate = date;
+  // 重新渲染以更新選取狀態
+  await renderCalendar();
+  await loadDayDetail(date);
+}
+
+async function loadDayDetail(date){
+  const key = `${date.getFullYear()}${pad(date.getMonth()+1)}${pad(date.getDate())}`;
+  const wk = ['日','一','二','三','四','五','六'][date.getDay()];
+  const isToday = sameDay(date, new Date());
+  document.getElementById('day-title').innerHTML =
+    `${date.getMonth()+1} 月 ${date.getDate()} 日 <span style="color:#8e8e93;font-weight:500;font-size:14px;">星期${wk}</span>` +
+    (isToday ? ' <span class="badge">今天</span>' : '');
+
+  // 顯示載入中
+  ['line','fb','google'].forEach(b => document.getElementById(`dc-${b}`).textContent = '…');
+  document.getElementById('dc-total').textContent = '…';
+
+  const counts = await Promise.all(BRANDS.map(b => fetchKey(`${DATA_KEY[b]}-d-${key}`)));
+  let total = 0;
+  BRANDS.forEach((b, i) => {
+    document.getElementById(`dc-${b}`).textContent = counts[i].toLocaleString();
+    total += counts[i];
+  });
+  document.getElementById('dc-total').textContent = total.toLocaleString() + ' 次';
+}
+
+document.getElementById('cal-prev').addEventListener('click', () => {
+  calMonth--;
+  if (calMonth < 0) { calMonth = 11; calYear--; }
+  renderCalendar();
+});
+document.getElementById('cal-next').addEventListener('click', () => {
+  calMonth++;
+  if (calMonth > 11) { calMonth = 0; calYear++; }
+  renderCalendar();
+});
+document.getElementById('cal-today').addEventListener('click', () => {
+  const t = new Date();
+  calYear = t.getFullYear();
+  calMonth = t.getMonth();
+  selectDate(t);
+});
+
+// 初始：顯示本月並預設選中今天
+(function initCalendar(){
+  const t = new Date();
+  calYear = t.getFullYear();
+  calMonth = t.getMonth();
+  selectedDate = t;
+  renderCalendar();
+  loadDayDetail(t);
+})();
+
+// =============== 折線圖（近 30 天） ===============
+let lineChartInstance;
+async function renderLineChart(){
+  const days = lastNDays(30).reverse(); // 舊→新
+  const labels = days.map(k => `${parseInt(k.slice(4,6))}/${parseInt(k.slice(6,8))}`);
+  const datasets = [];
+  const colorMap = {
+    line:   { color: '#06C755', label: 'LINE' },
+    fb:     { color: '#1877F2', label: 'Facebook' },
+    google: { color: '#FBBC05', label: 'Google' },
+  };
+  for (const b of BRANDS) {
+    const counts = await Promise.all(days.map(k => fetchKey(`${DATA_KEY[b]}-d-${k}`)));
+    datasets.push({
+      label: colorMap[b].label,
+      data: counts,
+      borderColor: colorMap[b].color,
+      backgroundColor: colorMap[b].color + '33',
+      borderWidth: 2.5,
+      tension: 0.35,
+      fill: false,
+      pointRadius: 3,
+      pointHoverRadius: 5,
+      pointBackgroundColor: colorMap[b].color,
+    });
+  }
+  if (lineChartInstance) lineChartInstance.destroy();
+  const ctx = document.getElementById('lineChart').getContext('2d');
+  lineChartInstance = new Chart(ctx, {
+    type: 'line',
+    data: { labels, datasets },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          labels: { color: '#c7c7cc', font: { size: 11 }, boxWidth: 12 }
+        },
+        tooltip: { backgroundColor: '#000', titleColor: '#FFD500', bodyColor: '#fff', borderColor: '#3a3a3c', borderWidth: 1 }
+      },
+      scales: {
+        x: { ticks: { color: '#8e8e93', font: { size: 10 }, maxRotation: 0, autoSkip: true, maxTicksLimit: 7 }, grid: { color: 'rgba(255,255,255,0.04)' } },
+        y: { beginAtZero: true, ticks: { color: '#8e8e93', font: { size: 10 }, precision: 0 }, grid: { color: 'rgba(255,255,255,0.05)' } }
+      }
+    }
+  });
+}
+
+// =============== 熱力圖（近 12 週 = 84 天） ===============
+async function renderHeatmap(){
+  const grid = document.getElementById('heatGrid');
+  grid.innerHTML = '';
+  const tip = document.getElementById('heatTip');
+  const today = new Date();
+
+  // 從今天往前推到 12 週前的週日
+  const totalDays = 84;
+  const startDate = new Date(today);
+  startDate.setDate(today.getDate() - (totalDays - 1));
+  // 對齊到週日開頭
+  const startDow = startDate.getDay();
+  startDate.setDate(startDate.getDate() - startDow);
+
+  const cellCount = Math.ceil((today - startDate) / 86400000) + 1;
+  const cells = [];
+  let maxVal = 0;
+
+  for (let i = 0; i < cellCount; i++) {
+    const date = new Date(startDate);
+    date.setDate(startDate.getDate() + i);
+    const isFuture = date > today;
+    const cell = document.createElement('div');
+    cell.className = 'heat-cell';
+    cell.dataset.date = date.toISOString().slice(0,10);
+    if (isFuture) {
+      cell.style.opacity = '0.15';
+      grid.appendChild(cell);
+      cells.push({ date, cell, val: 0, future: true });
+      continue;
+    }
+    grid.appendChild(cell);
+    cells.push({ date, cell, val: 0, future: false });
+  }
+
+  // 抓取所有日期的計數
+  await Promise.all(cells.filter(c => !c.future).map(async c => {
+    const k = `${c.date.getFullYear()}${pad(c.date.getMonth()+1)}${pad(c.date.getDate())}`;
+    const counts = await Promise.all(BRANDS.map(b => fetchKey(`${DATA_KEY[b]}-d-${k}`)));
+    c.val = counts.reduce((a,b)=>a+b, 0);
+    if (c.val > maxVal) maxVal = c.val;
+  }));
+
+  // 上色（依數值分 4 級）
+  cells.forEach(c => {
+    if (c.future) return;
+    if (c.val === 0) return;
+    const pct = c.val / Math.max(maxVal, 1);
+    let lvl = 1;
+    if (pct > 0.75) lvl = 4;
+    else if (pct > 0.5) lvl = 3;
+    else if (pct > 0.25) lvl = 2;
+    c.cell.classList.add('l' + lvl);
+  });
+
+  // tooltip
+  cells.forEach(c => {
+    c.cell.addEventListener('mouseenter', (e) => {
+      const wk = ['日','一','二','三','四','五','六'][c.date.getDay()];
+      tip.textContent = `${c.date.getMonth()+1}/${c.date.getDate()} (週${wk}) · ${c.val} 次`;
+      const r = c.cell.getBoundingClientRect();
+      const cr = c.cell.parentElement.getBoundingClientRect();
+      tip.style.left = (r.left - cr.left + r.width/2) + 'px';
+      tip.style.top  = (r.top - cr.top) + 'px';
+      tip.classList.add('show');
+    });
+    c.cell.addEventListener('mouseleave', () => tip.classList.remove('show'));
+  });
+}
+
+// =============== Excel 匯出 ===============
+async function exportExcel(){
+  const btn = document.querySelector('.download-btn');
+  const originalHTML = btn.innerHTML;
+  btn.innerHTML = '<span>⏳</span><span>產生 Excel 中…</span>';
+  btn.disabled = true;
+
+  try {
+    // ① 終身總計
+    const totalCounts = await Promise.all(BRANDS.map(b => fetchKey(DATA_KEY[b])));
+
+    // ② 過去 90 天每日紀錄
+    const days = lastNDays(90);
+    const dailyData = [['日期', '星期', 'LINE', 'Facebook', 'Google', '總計']];
+    for (const k of days.reverse()) {
+      const date = new Date(parseInt(k.slice(0,4)), parseInt(k.slice(4,6))-1, parseInt(k.slice(6,8)));
+      const wk = ['日','一','二','三','四','五','六'][date.getDay()];
+      const counts = await Promise.all(BRANDS.map(b => fetchKey(`${DATA_KEY[b]}-d-${k}`)));
+      const total = counts.reduce((a,b)=>a+b,0);
+      dailyData.push([
+        `${date.getFullYear()}-${pad(date.getMonth()+1)}-${pad(date.getDate())}`,
+        wk, counts[0], counts[1], counts[2], total
+      ]);
+    }
+
+    // ③ 近 12 個月每月紀錄
+    const months = lastNMonths(12);
+    const monthData = [['月份', 'LINE', 'Facebook', 'Google', '總計']];
+    for (const m of months.reverse()) {
+      const counts = await Promise.all(BRANDS.map(b => fetchKey(`${DATA_KEY[b]}-m-${m}`)));
+      const total = counts.reduce((a,b)=>a+b,0);
+      monthData.push([
+        `${m.slice(0,4)}-${m.slice(4,6)}`,
+        counts[0], counts[1], counts[2], total
+      ]);
+    }
+
+    // ④ 總覽
+    const summary = [
+      ['指標', '數量'],
+      ['LINE 加好友 (累計)', totalCounts[0]],
+      ['Facebook 按讚 (累計)', totalCounts[1]],
+      ['Google 五星 (累計)', totalCounts[2]],
+      ['總點擊數', totalCounts.reduce((a,b)=>a+b,0)],
+      ['', ''],
+      ['報表產生時間', new Date().toLocaleString('zh-TW')],
+      ['店家', '燦坤華榮 AppleShop'],
+      ['網址', 'https://magicbrian1206-maker.github.io/landing/'],
+    ];
+
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(summary), '總覽');
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(dailyData), '每日紀錄_近90天');
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(monthData), '每月紀錄_近12月');
+
+    const today = new Date();
+    const fname = `燦坤華榮AppleShop-點擊紀錄-${today.getFullYear()}${pad(today.getMonth()+1)}${pad(today.getDate())}.xlsx`;
+    XLSX.writeFile(wb, fname);
+  } catch(e) {
+    alert('匯出失敗：' + e.message);
+  } finally {
+    btn.innerHTML = originalHTML;
+    btn.disabled = false;
+  }
+}
+
+// 初始化圖表
+renderLineChart();
+renderHeatmap();
+// 每 5 分鐘更新圖表
+setInterval(() => { renderLineChart(); renderHeatmap(); }, 5 * 60 * 1000);
+</script>
+</body>
+</html>

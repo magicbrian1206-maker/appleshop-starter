@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<title>燦坤華榮 AppleShop · 數位行銷成品交付清單</title>
+<style>
+  @page { size: A4; margin: 14mm 14mm 12mm; }
+  @media print {
+    *, *::before, *::after {
+      -webkit-print-color-adjust: exact !important;
+      print-color-adjust: exact !important;
+    }
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "PingFang TC",
+                 "Microsoft JhengHei", "Helvetica Neue", sans-serif;
+    color: #1d1d1f;
+    line-height: 1.6;
+    font-size: 11pt;
+    background: #fff;
+  }
+  .doc { max-width: 180mm; margin: 0 auto; }
+
+  /* 封面標題區 */
+  header.title {
+    background: linear-gradient(135deg, #FFD500 0%, #FFC700 100%);
+    border-radius: 12px;
+    padding: 18px 22px;
+    margin-bottom: 18px;
+    border-left: 6px solid #1d1d1f;
+  }
+  header.title h1 {
+    font-size: 20pt;
+    font-weight: 800;
+    margin-bottom: 4px;
+    letter-spacing: 1px;
+  }
+  header.title .sub {
+    font-size: 10.5pt;
+    color: #1d1d1f;
+    opacity: 0.75;
+  }
+  header.title .date {
+    font-size: 9pt;
+    margin-top: 6px;
+    color: #555;
+  }
+
+  h2 {
+    font-size: 13pt;
+    margin: 18px 0 10px;
+    padding: 6px 10px;
+    background: #1d1d1f;
+    color: #fff;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  h2 .num {
+    background: #FFD500;
+    color: #1d1d1f;
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11pt;
+    font-weight: 700;
+  }
+
+  h3 {
+    font-size: 11pt;
+    margin: 12px 0 6px;
+    color: #1d1d1f;
+    padding-left: 8px;
+    border-left: 3px solid #FFD500;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 8px 0 12px;
+    font-size: 10pt;
+  }
+  th, td {
+    text-align: left;
+    padding: 7px 10px;
+    border-bottom: 1px solid #e5e5ea;
+    vertical-align: top;
+  }
+  th {
+    background: #fafafa;
+    font-weight: 600;
+    color: #6e6e73;
+    width: 32%;
+  }
+  td a, .url {
+    color: #0066CC;
+    word-break: break-all;
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    font-size: 9.5pt;
+  }
+
+  .code {
+    background: #f5f5f7;
+    border: 1px solid #e5e5ea;
+    border-left: 3px solid #FFD500;
+    padding: 10px 12px;
+    border-radius: 6px;
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    font-size: 8.5pt;
+    line-height: 1.5;
+    white-space: pre-wrap;
+    word-break: break-all;
+    color: #1d1d1f;
+    margin: 8px 0 12px;
+  }
+
+  ol.steps {
+    counter-reset: stp;
+    list-style: none;
+    padding: 0;
+    margin: 8px 0 12px;
+  }
+  ol.steps li {
+    position: relative;
+    padding: 4px 0 4px 28px;
+    margin-bottom: 4px;
+  }
+  ol.steps li::before {
+    counter-increment: stp;
+    content: counter(stp);
+    position: absolute;
+    left: 0; top: 4px;
+    width: 20px; height: 20px;
+    background: #1d1d1f;
+    color: #FFD500;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 9pt;
+  }
+
+  .tip {
+    background: #FFFBE6;
+    border-left: 3px solid #FFD500;
+    padding: 8px 12px;
+    border-radius: 4px;
+    font-size: 9.5pt;
+    margin: 8px 0;
+    color: #5a4a00;
+  }
+  .warn {
+    background: #fef0f0;
+    border-left: 3px solid #ff3b30;
+    padding: 8px 12px;
+    border-radius: 4px;
+    font-size: 9.5pt;
+    margin: 8px 0;
+    color: #8a1f1a;
+  }
+
+  footer {
+    margin-top: 22px;
+    padding-top: 12px;
+    border-top: 2px solid #FFD500;
+    font-size: 8.5pt;
+    color: #6e6e73;
+    text-align: center;
+  }
+
+  /* 三大連結卡片 */
+  .cards { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin: 8px 0; }
+  .card-item {
+    background: #fafafa;
+    border: 1px solid #e5e5ea;
+    border-top: 4px solid #FFD500;
+    border-radius: 8px;
+    padding: 10px;
+    font-size: 9.5pt;
+  }
+  .card-item .label { font-weight: 700; font-size: 10pt; margin-bottom: 4px; }
+  .card-item .desc { color: #6e6e73; font-size: 9pt; margin-bottom: 6px; }
+  .card-item .link { font-family: ui-monospace, "SF Mono", monospace; font-size: 8pt; color: #0066CC; word-break: break-all; }
+</style>
+</head>
+<body>
+<div class="doc">
+
+  <header class="title">
+    <h1>🍎 燦坤華榮 AppleShop</h1>
+    <div class="sub">數位行銷成品交付清單 · Digital Marketing Deliverables</div>
+    <div class="date">交付日期：2026 年 4 月 26 日</div>
+  </header>
+
+  <!-- 1. 線上網址 -->
+  <h2><span class="num">1</span>線上網址（隨時可開）</h2>
+
+  <div class="cards">
+    <div class="card-item">
+      <div class="label">📱 落地頁</div>
+      <div class="desc">客人掃描 QR 後看到的頁面</div>
+      <div class="link">magicbrian1206-maker.github.io/landing/</div>
+    </div>
+    <div class="card-item">
+      <div class="label">🖼 A4 橫向 DM</div>
+      <div class="desc">店面佈置用，可列印</div>
+      <div class="link">magicbrian1206-maker.github.io/landing/dm.html</div>
+    </div>
+    <div class="card-item">
+      <div class="label">💻 GitHub Repo</div>
+      <div class="desc">原始碼，可隨時編輯</div>
+      <div class="link">github.com/magicbrian1206-maker/landing</div>
+    </div>
+  </div>
+
+  <!-- 2. 下載 PDF -->
+  <h2><span class="num">2</span>下載 DM 為高畫質 PDF</h2>
+
+  <h3>方法 A：一行指令（最快，自動完成）</h3>
+  <p style="font-size:10pt;">打開「終端機」(Terminal)，整段複製貼上後按 Enter，PDF 會自動存到桌面並打開：</p>
+  <div class="code">cd ~/Desktop &amp;&amp; "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" --headless --disable-gpu --no-pdf-header-footer --virtual-time-budget=10000 --print-to-pdf="燦坤華榮AppleShop-DM.pdf" "https://magicbrian1206-maker.github.io/landing/dm.html" &amp;&amp; open "燦坤華榮AppleShop-DM.pdf"</div>
+
+  <div class="tip">💎 想要印刷級 2x 高解析度？在指令裡加上 <code>--force-device-scale-factor=2</code></div>
+
+  <h3>方法 B：用 Chrome 瀏覽器手動印（傻瓜版）</h3>
+  <ol class="steps">
+    <li>打開 Chrome，前往 DM 網址</li>
+    <li>等照片完全載入後，按 <strong>⌘ + P</strong></li>
+    <li>目的地：「另存為 PDF」</li>
+    <li>紙張大小：<strong>A4</strong>　／　方向：<strong>橫向</strong>　／　邊界：<strong>無</strong></li>
+    <li>展開「更多設定」→ 必勾 <strong>「背景圖形」</strong></li>
+    <li>點「儲存」→ 桌面 → 完成</li>
+  </ol>
+  <div class="warn">⚠️ 「背景圖形」一定要勾，否則照片和黃色色條會印不出來</div>
+
+  <!-- 3. QR Code -->
+  <h2><span class="num">3</span>QR Code 圖檔</h2>
+  <table>
+    <tr><th>線上下載網址</th><td><span class="url">https://magicbrian1206-maker.github.io/landing/qrcode-final.png</span></td></tr>
+    <tr><th>本機檔案位置</th><td><span class="url">~/Documents/Enchanté/Conversations/F3F8F537-.../qrcode-final.png</span></td></tr>
+    <tr><th>規格</th><td>800 × 800 px · PNG · 高容錯等級 H · 適合列印與螢幕</td></tr>
+  </table>
+
+  <!-- 4. 店家資訊 -->
+  <h2><span class="num">4</span>店家資訊（已內建於落地頁與 DM）</h2>
+  <table>
+    <tr><th>店名</th><td>燦坤華榮 AppleShop</td></tr>
+    <tr><th>電話</th><td>07-5527930</td></tr>
+    <tr><th>地址</th><td>高雄市鼓山區華榮路 345 號</td></tr>
+    <tr><th>營業時間</th><td>每日 11:00 – 21:30</td></tr>
+    <tr><th>服務項目</th><td>iPhone・Mac・iPad・Apple Watch 展示與諮詢　·　手機舊換新</td></tr>
+    <tr><th>三大社群連結</th><td>
+      LINE 加好友：<span class="url">https://lin.ee/WDINrym</span><br>
+      FB 粉絲團：<span class="url">https://www.facebook.com/profile.php?id=61586040699143</span><br>
+      Google 五星：<span class="url">https://maps.app.goo.gl/5Dxng1UvA6nAGvqn7?g_st=ic</span>
+    </td></tr>
+  </table>
+
+  <!-- 5. 後續修改 -->
+  <h2><span class="num">5</span>後續想修改內容怎麼辦？</h2>
+  <p style="font-size:10.5pt;">所有檔案都已部署在 GitHub Pages，會自動上線。你不需要動手寫程式，只要告訴 AI 助理：</p>
+  <div class="tip" style="font-size:10.5pt;">
+    💬 範例 1：「幫我把營業時間改成 10:00–22:00」<br>
+    💬 範例 2：「把 LINE 連結換成 https://lin.ee/新連結」<br>
+    💬 範例 3：「DM 標題的字再大一點」
+  </div>
+  <p style="font-size:10pt; color:#6e6e73;">系統會自動修改、推送到 GitHub，30 秒內全網生效。原始碼會永久保存在 GitHub Repo 中。</p>
+
+  <!-- 6. 技術摘要 -->
+  <h2><span class="num">6</span>技術摘要</h2>
+  <table>
+    <tr><th>託管平台</th><td>GitHub Pages（免費・永久・自動 HTTPS）</td></tr>
+    <tr><th>技術堆疊</th><td>原生 HTML + CSS（無需任何後端，極致輕量）</td></tr>
+    <tr><th>分析追蹤</th><td>已埋入 Google Analytics 4 事件追蹤<br>（按鈕點擊：LINE / Facebook / Google）<br>啟用方式：申請 GA Measurement ID 後替換 G-XXXXXXXXXX</td></tr>
+    <tr><th>裝置支援</th><td>iOS / Android / iPad / Mac / Windows · 全平台自適應</td></tr>
+    <tr><th>QR 來源</th><td>api.qrserver.com（穩定、免費、無需註冊）</td></tr>
+  </table>
+
+  <footer>
+    © 2026 燦坤華榮 AppleShop · Apple 授權經銷夥伴<br>
+    本文件由 AI 助理 Enchanté 協助製作 · 高雄市鼓山區華榮路 345 號 · 07-5527930
+  </footer>
+
+</div>
+</body>
+</html>
