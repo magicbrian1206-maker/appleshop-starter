@@ -85,6 +85,30 @@ $('#photoDrop input').addEventListener('change', e => {
   }
 });
 
+// ===== 上傳舊 shop-config.json,自動填表 =====
+$('#configInput').addEventListener('change', async e => {
+  const f = e.target.files[0];
+  if (!f) return;
+  try {
+    const cfg = JSON.parse(await f.text());
+    const form = $('#storeForm');
+    let filled = 0;
+    for (const [k, v] of Object.entries(cfg)) {
+      const el = form.elements[k];
+      if (!el) continue;
+      if (el.type === 'checkbox') { el.checked = !!v; filled++; }
+      else if (typeof v === 'string') { el.value = v; filled++; }
+    }
+    updatePreview();
+    $('#configDrop').classList.add('has-file');
+    $('#configName').innerHTML = `✓ 已載入 <strong>${f.name}</strong> · 自動填了 ${filled} 個欄位<br><small style="color:#c0271a">⚠️ 別忘了重新上傳店面照片(JSON 不含圖片)</small>`;
+    // 滾到表單最上方,讓使用者看到自動填的內容
+    $('#storeForm').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  } catch (err) {
+    $('#configName').innerHTML = `❌ 載入失敗:${err.message}`;
+  }
+});
+
 // ===== 主要產生流程 =====
 async function generate() {
   const d = formData();

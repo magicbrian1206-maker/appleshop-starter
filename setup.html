@@ -98,6 +98,16 @@
   </header>
 
   <form id="storeForm">
+    <section class="card" style="background:linear-gradient(135deg,#fff8d6,#fff3b0);border:2px dashed #FFD500;">
+      <h2>📂 已經是老用戶?上傳舊設定一鍵填表</h2>
+      <p class="hint">之前下載過產生器嗎?把當時 zip 裡的 <code style="background:#fff;padding:2px 6px;border-radius:4px;">shop-config.json</code> 拖進來 → 表單自動填完 → 直接下載新版檔案</p>
+      <label class="file-drop" id="configDrop" style="border-color:#FFD500;">
+        <input type="file" accept=".json,application/json" id="configInput">
+        <div class="icon">📂</div>
+        <div class="name" id="configName">點擊或拖入 shop-config.json(可跳過)</div>
+      </label>
+    </section>
+
     <section class="card">
       <h2>🏪 店家基本資料</h2>
       <p class="hint">這些會出現在落地頁、DM、儀表板、週報信</p>
