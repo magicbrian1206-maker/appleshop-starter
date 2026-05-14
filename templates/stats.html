@@ -541,7 +541,7 @@
   <div class="stat line">
     <div class="icon">💬</div>
     <div class="text">
-      <div class="name">加入 LINE 好友</div>
+      <div class="name">點選 LINE 好友</div>
       <div class="desc"><span id="d-line">0</span><span class="unit">次</span></div>
     </div>
     <div class="progress"><div class="pct" id="p-line">0%</div><div class="of" id="g-line">目標 10</div></div>
@@ -550,7 +550,7 @@
   <div class="stat fb">
     <div class="icon">👍</div>
     <div class="text">
-      <div class="name">FB 粉絲團按讚</div>
+      <div class="name">點進 FB 粉絲團</div>
       <div class="desc"><span id="d-fb">0</span><span class="unit">次</span></div>
     </div>
     <div class="progress"><div class="pct" id="p-fb">0%</div><div class="of" id="g-fb">目標 10</div></div>
@@ -559,7 +559,7 @@
   <div class="stat google">
     <div class="icon">⭐</div>
     <div class="text">
-      <div class="name">Google 五星好評</div>
+      <div class="name">點進 Google 評論</div>
       <div class="desc"><span id="d-google">0</span><span class="unit">次</span></div>
     </div>
     <div class="progress"><div class="pct" id="p-google">0%</div><div class="of" id="g-google">目標 10</div></div>
@@ -598,17 +598,17 @@
       <div class="day-rows">
         <div class="day-row line">
           <div class="ic">💬</div>
-          <div class="nm">加入 LINE 好友</div>
+          <div class="nm">點選 LINE 好友</div>
           <div class="vl"><span id="dc-line">—</span><span class="u">次</span></div>
         </div>
         <div class="day-row fb">
           <div class="ic">👍</div>
-          <div class="nm">FB 粉絲團按讚</div>
+          <div class="nm">點進 FB 粉絲團</div>
           <div class="vl"><span id="dc-fb">—</span><span class="u">次</span></div>
         </div>
         <div class="day-row google">
           <div class="ic">⭐</div>
-          <div class="nm">Google 五星好評</div>
+          <div class="nm">點進 Google 評論</div>
           <div class="vl"><span id="dc-google">—</span><span class="u">次</span></div>
         </div>
       </div>
@@ -1151,9 +1151,9 @@ async function exportExcel(){
     // ④ 總覽
     const summary = [
       ['指標', '數量'],
-      ['LINE 加好友 (累計)', totalCounts[0]],
+      ['點選 LINE 好友 (累計)', totalCounts[0]],
       ['Facebook 按讚 (累計)', totalCounts[1]],
-      ['Google 五星 (累計)', totalCounts[2]],
+      ['點進 Google 評論 (累計)', totalCounts[2]],
       ['總點擊數', totalCounts.reduce((a,b)=>a+b,0)],
       ['', ''],
       ['報表產生時間', new Date().toLocaleString('zh-TW')],

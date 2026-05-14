@@ -8,9 +8,9 @@ const XLSX = require('xlsx');
 
 const NS = 'tsann-kuen-appleshop';
 const BRANDS = [
-  { key: 'line',     name: 'LINE 加好友',  color: '#06C755' },
-  { key: 'facebook', name: 'FB 按讚',      color: '#1877F2' },
-  { key: 'google',   name: 'Google 五星',  color: '#EA4335' },
+  { key: 'line',     name: '點選 LINE 好友',  color: '#06C755' },
+  { key: 'facebook', name: '點進 FB 粉絲團',      color: '#1877F2' },
+  { key: 'google',   name: '點進 Google 評論',  color: '#EA4335' },
 ];
 const DASHBOARD = 'https://magicbrian1206-maker.github.io/landing/stats.html';
 const LANDING   = 'https://magicbrian1206-maker.github.io/landing/';
