@@ -1,5 +1,9 @@
 # AppleShop Starter Kit · 更新紀錄
 
+## v1.0.6 — 2026-05-16
+- Right column 3 rd-trend cards: stretch to equal height matching left column
+
+
 ## v1.0.5 — 2026-05-16
 - Real-data trend cards: equal height + weekly/monthly delta + empty-state hint
 

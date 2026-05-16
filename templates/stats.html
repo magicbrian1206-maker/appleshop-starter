@@ -34,13 +34,28 @@
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 16px;
-      align-items: start;
+      align-items: stretch;     /* 各欄等高(撐到最高那欄) */
+    }
+    /* 每欄變成 flex column,讓裡面的卡片可以 flex:1 撐滿 */
+    .main-grid > div {
+      display: flex;
+      flex-direction: column;
     }
     /* header / tabs / meta / 下載按鈕保持全寬 */
     .full-width { grid-column: 1 / -1; }
     /* 每一欄的「第一張卡」上方對齊（移除預設 margin-top） */
     .main-grid > div > *:first-child {
       margin-top: 0 !important;
+    }
+    /* 含有 .rd-trend 子元素的 chart-card 撐滿剩餘空間,3 張卡平分 */
+    .chart-card:has(.rd-trend) {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+    .chart-card:has(.rd-trend) > .rd-trend {
+      flex: 1;
+      min-height: 0;            /* 取消之前的 min-height 限制,讓 flex 自由分配 */
     }
   }
   /* ===== 寬螢幕三欄佈局（>= 1280px） ===== */
