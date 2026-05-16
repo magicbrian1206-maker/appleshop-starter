@@ -55,8 +55,7 @@
     .rings-wrap { width: 200px; height: 200px; }
     .rings-center .total-num { font-size: 34px; }
     .chart-wrap { height: 180px; }
-    .heat-cell { width: 12px; height: 12px; }
-    .heat-grid { grid-template-rows: repeat(7, 12px); grid-auto-columns: 12px; }
+    .rd-chart-wrap { height: 60px; }
     .stat { padding: 12px 14px; }
     .stat .icon { width: 38px; height: 38px; font-size: 18px; }
     .stat .text .desc { font-size: 18px; }
@@ -390,54 +389,30 @@
   .chart-card h3 .icon { font-size: 18px; }
   .chart-wrap { position: relative; height: 220px; }
 
-  /* ===== 熱力圖 ===== */
-  .heat-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; padding-bottom: 4px; }
-  .heat-wrap::-webkit-scrollbar { height: 4px; }
-  .heat-wrap::-webkit-scrollbar-thumb { background: #3a3a3c; border-radius: 2px; }
-  .heat-grid {
-    display: inline-grid;
-    grid-template-rows: repeat(7, 14px);
-    grid-auto-flow: column;
-    grid-auto-columns: 14px;
-    gap: 3px;
-    padding: 4px 0;
+  /* ===== 真實數據趨勢卡 (rd-trend) ===== */
+  .rd-trend {
+    margin-top: 14px;
+    padding: 12px;
+    background: #1c1c1e;
+    border-radius: 12px;
+    border-left: 3px solid;
   }
-  .heat-cell {
-    width: 14px; height: 14px;
-    border-radius: 3px;
-    background: #2a2a2c;
-    cursor: pointer;
-    transition: transform 0.1s;
+  .rd-trend:first-of-type { margin-top: 0; }
+  .rd-trend.line   { border-left-color: #06C755; }
+  .rd-trend.fb     { border-left-color: #1877F2; }
+  .rd-trend.google { border-left-color: #FBBC05; }
+  .rd-head {
+    display: flex; align-items: baseline; gap: 8px;
+    margin-bottom: 8px;
   }
-  .heat-cell:hover { transform: scale(1.4); }
-  .heat-cell.l1 { background: rgba(255,213,0,0.25); }
-  .heat-cell.l2 { background: rgba(255,213,0,0.5); }
-  .heat-cell.l3 { background: rgba(255,213,0,0.75); }
-  .heat-cell.l4 { background: #FFD500; box-shadow: 0 0 4px #FFD500; }
-  .heat-legend {
-    display: flex; align-items: center; justify-content: flex-end;
-    gap: 4px; font-size: 10px; color: #8e8e93;
-    margin-top: 6px;
-  }
-  .heat-legend .swatch {
-    width: 10px; height: 10px; border-radius: 2px;
-  }
-  .heat-tooltip {
-    position: absolute;
-    background: #000;
-    border: 1px solid rgba(255,255,255,0.2);
-    color: #fff;
-    padding: 6px 10px;
-    border-radius: 6px;
-    font-size: 11px;
-    pointer-events: none;
-    white-space: nowrap;
-    z-index: 100;
-    transform: translate(-50%, -130%);
-    opacity: 0;
-    transition: opacity 0.15s;
-  }
-  .heat-tooltip.show { opacity: 1; }
+  .rd-icn { font-size: 16px; }
+  .rd-name { font-size: 12px; color: #8e8e93; flex: 1; letter-spacing: 0.5px; }
+  .rd-cur { font-size: 22px; font-weight: 800; color: #fff; font-variant-numeric: tabular-nums; }
+  .rd-delta { font-size: 11px; font-weight: 600; }
+  .rd-delta.up   { color: #06C755; }
+  .rd-delta.down { color: #EA4335; }
+  .rd-delta.flat { color: #8e8e93; }
+  .rd-chart-wrap { position: relative; height: 80px; }
 
   /* ===== Excel 下載按鈕 ===== */
   .download-btn {
@@ -757,29 +732,42 @@
 
     </div>  <!-- 中欄結束 -->
 
-    <!-- ============ 右欄：熱力圖 + 折線圖 + Excel ============ -->
+    <!-- ============ 右欄:真實數據趨勢 + Excel ============ -->
     <div>
 
-  <!-- ===== 熱力圖 ===== -->
+  <!-- ===== 真實數據趨勢 (取代舊熱力圖+折線圖) ===== -->
   <div class="chart-card">
-    <h3><span class="icon">🔥</span>近 12 週熱力圖</h3>
-    <div class="heat-wrap" style="position:relative;">
-      <div class="heat-grid" id="heatGrid"></div>
-      <div class="heat-tooltip" id="heatTip"></div>
-    </div>
-    <div class="heat-legend">
-      少 <span class="swatch" style="background:#2a2a2c"></span>
-      <span class="swatch" style="background:rgba(255,213,0,0.25)"></span>
-      <span class="swatch" style="background:rgba(255,213,0,0.5)"></span>
-      <span class="swatch" style="background:rgba(255,213,0,0.75)"></span>
-      <span class="swatch" style="background:#FFD500"></span> 多
-    </div>
-  </div>
+    <h3><span class="icon">📡</span>真實數據趨勢</h3>
 
-  <!-- ===== 折線圖（移到右欄，與熱力圖並排） ===== -->
-  <div class="chart-card">
-    <h3><span class="icon">📈</span>近 30 日趨勢</h3>
-    <div class="chart-wrap"><canvas id="lineChart"></canvas></div>
+    <div class="rd-trend line">
+      <div class="rd-head">
+        <span class="rd-icn">💬</span>
+        <span class="rd-name">LINE 好友</span>
+        <span class="rd-cur" id="rd-line-cur">—</span>
+        <span class="rd-delta" id="rd-line-delta">—</span>
+      </div>
+      <div class="rd-chart-wrap"><canvas id="rd-line-chart"></canvas></div>
+    </div>
+
+    <div class="rd-trend fb">
+      <div class="rd-head">
+        <span class="rd-icn">👍</span>
+        <span class="rd-name">FB 追蹤</span>
+        <span class="rd-cur" id="rd-fb-cur">—</span>
+        <span class="rd-delta" id="rd-fb-delta">—</span>
+      </div>
+      <div class="rd-chart-wrap"><canvas id="rd-fb-chart"></canvas></div>
+    </div>
+
+    <div class="rd-trend google">
+      <div class="rd-head">
+        <span class="rd-icn">⭐</span>
+        <span class="rd-name">Google 評論</span>
+        <span class="rd-cur" id="rd-google-cur">—</span>
+        <span class="rd-delta" id="rd-google-delta">—</span>
+      </div>
+      <div class="rd-chart-wrap"><canvas id="rd-google-chart"></canvas></div>
+    </div>
   </div>
 
   <!-- ===== Excel 下載 ===== -->
@@ -999,8 +987,8 @@ async function loadAll(force=false){
     await loadDayDetail(selectedDate);
   }
   if (typeof renderCalendar === 'function') renderCalendar();
-  if (typeof renderLineChart === 'function') renderLineChart();
-  if (typeof renderHeatmap === 'function') renderHeatmap();
+  if (typeof renderExternalCharts === 'function') renderExternalCharts();
+  if (typeof renderCalendar === 'function') renderCalendar();
   // 真實數據卡
   if (force && typeof loadExternalStats === 'function') loadExternalStats();
 }
@@ -1218,123 +1206,108 @@ document.getElementById('cal-today').addEventListener('click', () => {
   loadDayDetail(t);
 })();
 
-// =============== 折線圖（近 30 天） ===============
-let lineChartInstance;
-async function renderLineChart(){
-  const days = lastNDays(30).reverse(); // 舊→新
-  const labels = days.map(k => `${parseInt(k.slice(4,6))}/${parseInt(k.slice(6,8))}`);
-  const datasets = [];
-  const colorMap = {
-    line:   { color: '#06C755', label: 'LINE' },
-    fb:     { color: '#1877F2', label: 'Facebook' },
-    google: { color: '#FBBC05', label: 'Google' },
-  };
-  for (const b of BRANDS) {
-    const counts = await Promise.all(days.map(k => fetchKey(`${DATA_KEY[b]}-d-${k}`)));
-    datasets.push({
-      label: colorMap[b].label,
-      data: counts,
-      borderColor: colorMap[b].color,
-      backgroundColor: colorMap[b].color + '33',
-      borderWidth: 2.5,
-      tension: 0.35,
-      fill: false,
-      pointRadius: 3,
-      pointHoverRadius: 5,
-      pointBackgroundColor: colorMap[b].color,
-    });
-  }
-  if (lineChartInstance) lineChartInstance.destroy();
-  const ctx = document.getElementById('lineChart').getContext('2d');
-  lineChartInstance = new Chart(ctx, {
+// =============== 真實數據趨勢圖 (LINE 好友 / FB 追蹤 / Google 評論) ===============
+const rdChartInstances = {};
+function _rdFmtDelta(n) {
+  if (n == null) return '';
+  if (n === 0) return '本週 ±0';
+  return '本週 ' + (n > 0 ? '+' : '') + n;
+}
+function _rdDeltaClass(n) {
+  if (n == null) return 'flat';
+  if (n === 0) return 'flat';
+  return n > 0 ? 'up' : 'down';
+}
+
+function _rdRenderChart(canvasId, history, color) {
+  // history 由 Worker 回傳:[{date:'YYYYMMDD', value:N}, ...] 最新在前
+  // 反轉為「舊→新」給 Chart.js
+  const hist = (history || []).slice().reverse();
+  const labels = hist.map(h => parseInt(h.date.slice(4,6)) + '/' + parseInt(h.date.slice(6,8)));
+  const data = hist.map(h => h.value);
+
+  if (rdChartInstances[canvasId]) rdChartInstances[canvasId].destroy();
+  const ctx = document.getElementById(canvasId).getContext('2d');
+  rdChartInstances[canvasId] = new Chart(ctx, {
     type: 'line',
-    data: { labels, datasets },
+    data: {
+      labels,
+      datasets: [{
+        data,
+        borderColor: color,
+        backgroundColor: color + '33',
+        borderWidth: 2,
+        tension: 0.35,
+        fill: true,
+        pointRadius: 0,
+        pointHoverRadius: 4,
+        pointHoverBackgroundColor: color,
+      }]
+    },
     options: {
       responsive: true,
       maintainAspectRatio: false,
       plugins: {
-        legend: {
-          labels: { color: '#c7c7cc', font: { size: 11 }, boxWidth: 12 }
-        },
-        tooltip: { backgroundColor: '#000', titleColor: '#FFD500', bodyColor: '#fff', borderColor: '#3a3a3c', borderWidth: 1 }
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: '#000',
+          titleColor: '#FFD500',
+          bodyColor: '#fff',
+          borderColor: '#3a3a3c',
+          borderWidth: 1,
+          displayColors: false,
+          callbacks: {
+            title: (items) => items[0].label,
+            label:  (ctx)  => ctx.parsed.y.toLocaleString(),
+          }
+        }
       },
       scales: {
-        x: { ticks: { color: '#8e8e93', font: { size: 10 }, maxRotation: 0, autoSkip: true, maxTicksLimit: 7 }, grid: { color: 'rgba(255,255,255,0.04)' } },
-        y: { beginAtZero: true, ticks: { color: '#8e8e93', font: { size: 10 }, precision: 0 }, grid: { color: 'rgba(255,255,255,0.05)' } }
-      }
+        x: { display: false },
+        y: {
+          display: false,
+          // 不從 0 開始,放大區間讓變化看得到
+          grace: '5%',
+        }
+      },
+      interaction: { mode: 'nearest', intersect: false }
     }
   });
 }
 
-// =============== 熱力圖（近 12 週 = 84 天） ===============
-async function renderHeatmap(){
-  const grid = document.getElementById('heatGrid');
-  grid.innerHTML = '';
-  const tip = document.getElementById('heatTip');
-  const today = new Date();
+async function renderExternalCharts() {
+  try {
+    const r = await fetch(`${API_BASE}/external`);
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    const d = await r.json();
 
-  // 從今天往前推到 12 週前的週日
-  const totalDays = 84;
-  const startDate = new Date(today);
-  startDate.setDate(today.getDate() - (totalDays - 1));
-  // 對齊到週日開頭
-  const startDow = startDate.getDay();
-  startDate.setDate(startDate.getDate() - startDow);
-
-  const cellCount = Math.ceil((today - startDate) / 86400000) + 1;
-  const cells = [];
-  let maxVal = 0;
-
-  for (let i = 0; i < cellCount; i++) {
-    const date = new Date(startDate);
-    date.setDate(startDate.getDate() + i);
-    const isFuture = date > today;
-    const cell = document.createElement('div');
-    cell.className = 'heat-cell';
-    cell.dataset.date = date.toISOString().slice(0,10);
-    if (isFuture) {
-      cell.style.opacity = '0.15';
-      grid.appendChild(cell);
-      cells.push({ date, cell, val: 0, future: true });
-      continue;
+    // LINE
+    if (d.line && d.line.current != null) {
+      document.getElementById('rd-line-cur').textContent = d.line.current.toLocaleString();
+      const delta = document.getElementById('rd-line-delta');
+      delta.textContent = _rdFmtDelta(d.line.deltaWeek);
+      delta.className   = 'rd-delta ' + _rdDeltaClass(d.line.deltaWeek);
+      _rdRenderChart('rd-line-chart', d.line.history, '#06C755');
     }
-    grid.appendChild(cell);
-    cells.push({ date, cell, val: 0, future: false });
+    // FB
+    if (d.fb && d.fb.current != null) {
+      document.getElementById('rd-fb-cur').textContent = d.fb.current.toLocaleString();
+      const delta = document.getElementById('rd-fb-delta');
+      delta.textContent = _rdFmtDelta(d.fb.deltaWeek);
+      delta.className   = 'rd-delta ' + _rdDeltaClass(d.fb.deltaWeek);
+      _rdRenderChart('rd-fb-chart', d.fb.history, '#1877F2');
+    }
+    // Google
+    if (d.google && d.google.current != null) {
+      document.getElementById('rd-google-cur').textContent = d.google.current.toLocaleString();
+      const delta = document.getElementById('rd-google-delta');
+      delta.textContent = _rdFmtDelta(d.google.deltaWeek);
+      delta.className   = 'rd-delta ' + _rdDeltaClass(d.google.deltaWeek);
+      _rdRenderChart('rd-google-chart', d.google.history, '#FBBC05');
+    }
+  } catch (e) {
+    console.warn('[renderExternalCharts] failed:', e);
   }
-
-  // 抓取所有日期的計數
-  await Promise.all(cells.filter(c => !c.future).map(async c => {
-    const k = `${c.date.getFullYear()}${pad(c.date.getMonth()+1)}${pad(c.date.getDate())}`;
-    const counts = await Promise.all(BRANDS.map(b => fetchKey(`${DATA_KEY[b]}-d-${k}`)));
-    c.val = counts.reduce((a,b)=>a+b, 0);
-    if (c.val > maxVal) maxVal = c.val;
-  }));
-
-  // 上色（依數值分 4 級）
-  cells.forEach(c => {
-    if (c.future) return;
-    if (c.val === 0) return;
-    const pct = c.val / Math.max(maxVal, 1);
-    let lvl = 1;
-    if (pct > 0.75) lvl = 4;
-    else if (pct > 0.5) lvl = 3;
-    else if (pct > 0.25) lvl = 2;
-    c.cell.classList.add('l' + lvl);
-  });
-
-  // tooltip
-  cells.forEach(c => {
-    c.cell.addEventListener('mouseenter', (e) => {
-      const wk = ['日','一','二','三','四','五','六'][c.date.getDay()];
-      tip.textContent = `${c.date.getMonth()+1}/${c.date.getDate()} (週${wk}) · ${c.val} 次`;
-      const r = c.cell.getBoundingClientRect();
-      const cr = c.cell.parentElement.getBoundingClientRect();
-      tip.style.left = (r.left - cr.left + r.width/2) + 'px';
-      tip.style.top  = (r.top - cr.top) + 'px';
-      tip.classList.add('show');
-    });
-    c.cell.addEventListener('mouseleave', () => tip.classList.remove('show'));
-  });
 }
 
 // =============== Excel 匯出 ===============
