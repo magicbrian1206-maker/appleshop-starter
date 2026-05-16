@@ -392,10 +392,13 @@
   /* ===== 真實數據趨勢卡 (rd-trend) ===== */
   .rd-trend {
     margin-top: 14px;
-    padding: 12px;
+    padding: 14px;
     background: #1c1c1e;
     border-radius: 12px;
     border-left: 3px solid;
+    min-height: 150px;
+    display: flex;
+    flex-direction: column;
   }
   .rd-trend:first-of-type { margin-top: 0; }
   .rd-trend.line   { border-left-color: #06C755; }
@@ -403,16 +406,27 @@
   .rd-trend.google { border-left-color: #FBBC05; }
   .rd-head {
     display: flex; align-items: baseline; gap: 8px;
-    margin-bottom: 8px;
+    margin-bottom: 4px;
   }
   .rd-icn { font-size: 16px; }
   .rd-name { font-size: 12px; color: #8e8e93; flex: 1; letter-spacing: 0.5px; }
   .rd-cur { font-size: 22px; font-weight: 800; color: #fff; font-variant-numeric: tabular-nums; }
-  .rd-delta { font-size: 11px; font-weight: 600; }
-  .rd-delta.up   { color: #06C755; }
-  .rd-delta.down { color: #EA4335; }
-  .rd-delta.flat { color: #8e8e93; }
-  .rd-chart-wrap { position: relative; height: 80px; }
+  .rd-deltas {
+    font-size: 11px; font-weight: 600;
+    margin-bottom: 8px;
+    display: flex; gap: 10px;
+  }
+  .rd-delta-piece .label { color: #6e6e73; margin-right: 4px; font-weight: 500; }
+  .rd-delta-piece.up   .val { color: #06C755; }
+  .rd-delta-piece.down .val { color: #EA4335; }
+  .rd-delta-piece.flat .val { color: #8e8e93; }
+  .rd-chart-wrap { position: relative; height: 70px; flex: 1; min-height: 60px; }
+  .rd-chart-empty {
+    position: absolute; inset: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; color: #5a5a5e; letter-spacing: 0.5px;
+    pointer-events: none;
+  }
 
   /* ===== Excel 下載按鈕 ===== */
   .download-btn {
@@ -744,8 +758,8 @@
         <span class="rd-icn">💬</span>
         <span class="rd-name">LINE 好友</span>
         <span class="rd-cur" id="rd-line-cur">—</span>
-        <span class="rd-delta" id="rd-line-delta">—</span>
       </div>
+      <div class="rd-deltas" id="rd-line-deltas">—</div>
       <div class="rd-chart-wrap"><canvas id="rd-line-chart"></canvas></div>
     </div>
 
@@ -754,8 +768,8 @@
         <span class="rd-icn">👍</span>
         <span class="rd-name">FB 追蹤</span>
         <span class="rd-cur" id="rd-fb-cur">—</span>
-        <span class="rd-delta" id="rd-fb-delta">—</span>
       </div>
+      <div class="rd-deltas" id="rd-fb-deltas">—</div>
       <div class="rd-chart-wrap"><canvas id="rd-fb-chart"></canvas></div>
     </div>
 
@@ -764,8 +778,8 @@
         <span class="rd-icn">⭐</span>
         <span class="rd-name">Google 評論</span>
         <span class="rd-cur" id="rd-google-cur">—</span>
-        <span class="rd-delta" id="rd-google-delta">—</span>
       </div>
+      <div class="rd-deltas" id="rd-google-deltas">—</div>
       <div class="rd-chart-wrap"><canvas id="rd-google-chart"></canvas></div>
     </div>
   </div>
@@ -1208,25 +1222,39 @@ document.getElementById('cal-today').addEventListener('click', () => {
 
 // =============== 真實數據趨勢圖 (LINE 好友 / FB 追蹤 / Google 評論) ===============
 const rdChartInstances = {};
-function _rdFmtDelta(n) {
-  if (n == null) return '';
-  if (n === 0) return '本週 ±0';
-  return '本週 ' + (n > 0 ? '+' : '') + n;
-}
-function _rdDeltaClass(n) {
-  if (n == null) return 'flat';
-  if (n === 0) return 'flat';
-  return n > 0 ? 'up' : 'down';
+function _rdDeltaPiece(label, n) {
+  let cls = 'flat', txt = '±0';
+  if (n == null)      { cls = 'flat'; txt = '—'; }
+  else if (n > 0)     { cls = 'up';   txt = '+' + n; }
+  else if (n < 0)     { cls = 'down'; txt = String(n); }
+  return `<span class="rd-delta-piece ${cls}"><span class="label">${label}</span><span class="val">${txt}</span></span>`;
 }
 
 function _rdRenderChart(canvasId, history, color) {
-  // history 由 Worker 回傳:[{date:'YYYYMMDD', value:N}, ...] 最新在前
-  // 反轉為「舊→新」給 Chart.js
+  // history: [{date:'YYYYMMDD', value:N}, ...] 最新在前 → 反轉為舊→新
   const hist = (history || []).slice().reverse();
+  const wrap = document.getElementById(canvasId).parentElement;
+
+  // 移掉舊的 empty 提示
+  const oldEmpty = wrap.querySelector('.rd-chart-empty');
+  if (oldEmpty) oldEmpty.remove();
+
+  if (rdChartInstances[canvasId]) {
+    rdChartInstances[canvasId].destroy();
+    rdChartInstances[canvasId] = null;
+  }
+
+  // 資料不到 2 筆 → 顯示提示
+  if (hist.length < 2) {
+    const empty = document.createElement('div');
+    empty.className = 'rd-chart-empty';
+    empty.textContent = hist.length === 0 ? '尚未開始累積' : '累積中…(明天起會出現趨勢)';
+    wrap.appendChild(empty);
+    return;
+  }
+
   const labels = hist.map(h => parseInt(h.date.slice(4,6)) + '/' + parseInt(h.date.slice(6,8)));
   const data = hist.map(h => h.value);
-
-  if (rdChartInstances[canvasId]) rdChartInstances[canvasId].destroy();
   const ctx = document.getElementById(canvasId).getContext('2d');
   rdChartInstances[canvasId] = new Chart(ctx, {
     type: 'line',
@@ -1264,11 +1292,7 @@ function _rdRenderChart(canvasId, history, color) {
       },
       scales: {
         x: { display: false },
-        y: {
-          display: false,
-          // 不從 0 開始,放大區間讓變化看得到
-          grace: '5%',
-        }
+        y: { display: false, grace: '5%' }
       },
       interaction: { mode: 'nearest', intersect: false }
     }
@@ -1281,29 +1305,22 @@ async function renderExternalCharts() {
     if (!r.ok) throw new Error('HTTP ' + r.status);
     const d = await r.json();
 
-    // LINE
-    if (d.line && d.line.current != null) {
-      document.getElementById('rd-line-cur').textContent = d.line.current.toLocaleString();
-      const delta = document.getElementById('rd-line-delta');
-      delta.textContent = _rdFmtDelta(d.line.deltaWeek);
-      delta.className   = 'rd-delta ' + _rdDeltaClass(d.line.deltaWeek);
-      _rdRenderChart('rd-line-chart', d.line.history, '#06C755');
-    }
-    // FB
-    if (d.fb && d.fb.current != null) {
-      document.getElementById('rd-fb-cur').textContent = d.fb.current.toLocaleString();
-      const delta = document.getElementById('rd-fb-delta');
-      delta.textContent = _rdFmtDelta(d.fb.deltaWeek);
-      delta.className   = 'rd-delta ' + _rdDeltaClass(d.fb.deltaWeek);
-      _rdRenderChart('rd-fb-chart', d.fb.history, '#1877F2');
-    }
-    // Google
-    if (d.google && d.google.current != null) {
-      document.getElementById('rd-google-cur').textContent = d.google.current.toLocaleString();
-      const delta = document.getElementById('rd-google-delta');
-      delta.textContent = _rdFmtDelta(d.google.deltaWeek);
-      delta.className   = 'rd-delta ' + _rdDeltaClass(d.google.deltaWeek);
-      _rdRenderChart('rd-google-chart', d.google.history, '#FBBC05');
+    const sources = [
+      { key: 'line',   color: '#06C755', canvas: 'rd-line-chart',   curEl: 'rd-line-cur',   delEl: 'rd-line-deltas' },
+      { key: 'fb',     color: '#1877F2', canvas: 'rd-fb-chart',     curEl: 'rd-fb-cur',     delEl: 'rd-fb-deltas'   },
+      { key: 'google', color: '#FBBC05', canvas: 'rd-google-chart', curEl: 'rd-google-cur', delEl: 'rd-google-deltas' },
+    ];
+    for (const s of sources) {
+      const x = d[s.key];
+      if (x && x.current != null) {
+        document.getElementById(s.curEl).textContent = x.current.toLocaleString();
+        document.getElementById(s.delEl).innerHTML =
+          _rdDeltaPiece('本週', x.deltaWeek) + _rdDeltaPiece('本月', x.deltaMonth);
+        _rdRenderChart(s.canvas, x.history, s.color);
+      } else {
+        document.getElementById(s.curEl).textContent = '—';
+        document.getElementById(s.delEl).innerHTML = '<span class="rd-delta-piece flat"><span class="val">載入中…</span></span>';
+      }
     }
   } catch (e) {
     console.warn('[renderExternalCharts] failed:', e);

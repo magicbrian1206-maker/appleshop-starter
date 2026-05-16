@@ -1,5 +1,9 @@
 # AppleShop Starter Kit · 更新紀錄
 
+## v1.0.5 — 2026-05-16
+- Real-data trend cards: equal height + weekly/monthly delta + empty-state hint
+
+
 ## v1.0.4 — 2026-05-16
 - Replace heatmap + 30-day click trend with 3 real-data growth sparkline charts (LINE/FB/Google). Worker: add history arrays to fetchLine/fetchGoogle.
 
