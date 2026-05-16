@@ -465,6 +465,102 @@
   }
   .bump { animation: bump 0.4s ease; }
   .loading { opacity: 0.5; }
+
+  /* ===== 真實數據卡 (LINE 好友 / Google 評論 / FB 粉絲) ===== */
+  .ext-card {
+    background: #1c1c1e;
+    border: 1px solid #2a2a2c;
+    border-radius: 18px;
+    padding: 16px 18px;
+    margin: 0 0 16px;
+  }
+  .ext-head {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 14px;
+  }
+  .ext-head h3 {
+    font-size: 15px; font-weight: 600;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .ext-head h3 .icon { font-size: 16px; }
+  .ext-meta-r { font-size: 11px; color: #8e8e93; }
+  .ext-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+  @media (min-width: 700px) {
+    .ext-grid { grid-template-columns: 1fr 1fr 1fr; }
+  }
+  .ext-cell {
+    background: #000;
+    border-radius: 14px;
+    padding: 14px 14px 12px;
+    border: 1px solid #2a2a2c;
+    position: relative;
+    min-height: 110px;
+  }
+  .ext-cell.line   { border-left: 3px solid var(--line); }
+  .ext-cell.google { border-left: 3px solid var(--google-2); }
+  .ext-cell.fb     { border-left: 3px solid var(--fb); }
+  .ext-icn { font-size: 18px; margin-bottom: 2px; }
+  .ext-label {
+    font-size: 11px; color: #8e8e93;
+    letter-spacing: 0.5px; text-transform: uppercase;
+  }
+  .ext-num {
+    font-size: 32px; font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    margin-top: 2px; line-height: 1.1;
+    color: #fff;
+  }
+  .ext-sub {
+    display: flex; flex-wrap: wrap; gap: 8px;
+    font-size: 11px; margin-top: 6px;
+  }
+  .ext-delta { font-weight: 700; }
+  .ext-delta.up   { color: #30D158; }
+  .ext-delta.down { color: #FF453A; }
+  .ext-delta.flat { color: #8e8e93; }
+  .ext-asof { color: #8e8e93; }
+  .ext-rating { color: var(--yellow); font-weight: 600; }
+  .ext-fb-form {
+    display: flex; gap: 6px; margin-top: 10px;
+  }
+  .ext-fb-form input {
+    flex: 1; min-width: 0;
+    background: #1c1c1e;
+    border: 1px solid #3a3a3c;
+    color: #fff;
+    padding: 8px 10px; border-radius: 10px;
+    font-size: 14px; font-variant-numeric: tabular-nums;
+    outline: none;
+    -webkit-appearance: none; appearance: none;
+    font-family: inherit;
+  }
+  .ext-fb-form input:focus { border-color: var(--fb); }
+  .ext-fb-form button {
+    background: var(--fb); color: #fff;
+    border: 0; border-radius: 10px;
+    padding: 8px 14px; font-size: 12px;
+    font-weight: 700; cursor: pointer;
+    white-space: nowrap;
+    -webkit-appearance: none; appearance: none;
+    font-family: inherit;
+    transition: background 0.2s;
+  }
+  .ext-fb-form button:active { opacity: 0.75; }
+  .ext-fb-form button:disabled { opacity: 0.5; cursor: not-allowed; }
+  .ext-fb-form button.saved { background: var(--line); }
+  .ext-fb-help {
+    font-size: 10px; color: #6c6c70;
+    margin-top: 6px; line-height: 1.4;
+  }
+  .ext-fb-help a { color: #8e8e93; text-decoration: underline; }
+  .ext-error {
+    color: #FF453A; font-size: 10px;
+    margin-top: 4px;
+  }
 </style>
 </head>
 <body>
@@ -477,6 +573,53 @@
     </div>
     <div class="avatar">🍎</div>
   </header>
+
+  <!-- ===== 真實數據卡 (LINE 好友 / Google 評論 / FB 粉絲) ===== -->
+  <div class="ext-card full-width" id="ext-card">
+    <div class="ext-head">
+      <h3><span class="icon">📡</span>真實數據</h3>
+      <div class="ext-meta-r" id="ext-meta-r">每 5 分鐘自動更新</div>
+    </div>
+    <div class="ext-grid">
+      <!-- LINE -->
+      <div class="ext-cell line">
+        <div class="ext-icn">💬</div>
+        <div class="ext-label">LINE 好友</div>
+        <div class="ext-num" id="ext-line-num">— —</div>
+        <div class="ext-sub">
+          <span class="ext-delta flat" id="ext-line-delta">本週 —</span>
+          <span class="ext-asof" id="ext-line-asof">—</span>
+        </div>
+      </div>
+      <!-- Google -->
+      <div class="ext-cell google">
+        <div class="ext-icn">⭐</div>
+        <div class="ext-label">Google 評論</div>
+        <div class="ext-num" id="ext-google-num">— —</div>
+        <div class="ext-sub">
+          <span class="ext-rating" id="ext-google-rating">⭐ —</span>
+          <span class="ext-delta flat" id="ext-google-delta">本週 —</span>
+        </div>
+      </div>
+      <!-- FB -->
+      <div class="ext-cell fb">
+        <div class="ext-icn">👍</div>
+        <div class="ext-label">FB 粉專讚數</div>
+        <div class="ext-num" id="ext-fb-num">— —</div>
+        <div class="ext-sub">
+          <span class="ext-delta flat" id="ext-fb-delta">昨日比 —</span>
+          <span class="ext-asof" id="ext-fb-asof">尚未輸入</span>
+        </div>
+        <div class="ext-fb-form">
+          <input type="number" id="fb-input" min="0" placeholder="今日數" inputmode="numeric"/>
+          <button onclick="submitFb()" id="fb-submit">儲存今日</button>
+        </div>
+        <div class="ext-fb-help">
+          每天到 <a href="https://www.facebook.com/profile.php?id=61586040699143/insights/" target="_blank" rel="noopener">FB Insights</a> 看一次粉絲數,輸入此處
+        </div>
+      </div>
+    </div>
+  </div>
 
   <!-- 時間切換 -->
   <div class="tabs full-width" id="tabs"></div>
@@ -865,7 +1008,127 @@ async function loadAll(force=false){
   if (typeof renderCalendar === 'function') renderCalendar();
   if (typeof renderLineChart === 'function') renderLineChart();
   if (typeof renderHeatmap === 'function') renderHeatmap();
+  // 真實數據卡
+  if (force && typeof loadExternalStats === 'function') loadExternalStats();
 }
+
+// =============== 真實數據卡 (LINE 好友 / Google 評論 / FB 粉絲) ===============
+async function loadExternalStats() {
+  try {
+    const r = await fetch(`${API_BASE}/external`);
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    const j = await r.json();
+    renderExternal(j);
+    const updatedTxt = j.cached
+      ? '快取資料 (5 分鐘內更新一次)'
+      : '剛剛更新 · ' + new Date().toLocaleTimeString('zh-TW',{hour:'2-digit',minute:'2-digit'});
+    const m = document.getElementById('ext-meta-r');
+    if (m) m.textContent = updatedTxt;
+  } catch (e) {
+    console.warn('[external] fetch failed:', e);
+    const m = document.getElementById('ext-meta-r');
+    if (m) m.textContent = '⚠️ 無法連線';
+  }
+}
+
+function _fmtDelta(n, unit='') {
+  if (n == null) return '—';
+  if (n === 0)   return '±0' + unit;
+  return (n > 0 ? '+' : '') + n + unit;
+}
+function _deltaClass(n) {
+  if (n == null) return 'flat';
+  if (n === 0)   return 'flat';
+  return n > 0 ? 'up' : 'down';
+}
+function _fmtMD(ymd) {
+  if (!ymd || ymd.length !== 8) return '—';
+  return parseInt(ymd.slice(4,6)) + '/' + parseInt(ymd.slice(6,8));
+}
+
+function renderExternal(d) {
+  // ---- LINE ----
+  const lineNum   = document.getElementById('ext-line-num');
+  const lineDelta = document.getElementById('ext-line-delta');
+  const lineAsOf  = document.getElementById('ext-line-asof');
+  if (d.line && !d.line.error && d.line.current != null) {
+    lineNum.textContent = d.line.current.toLocaleString();
+    lineDelta.textContent = '本週 ' + _fmtDelta(d.line.deltaWeek);
+    lineDelta.className   = 'ext-delta ' + _deltaClass(d.line.deltaWeek);
+    lineAsOf.textContent  = '截至 ' + _fmtMD(d.line.asOf);
+  } else {
+    lineNum.textContent = '—';
+    lineAsOf.textContent = (d.line && d.line.error) ? '⚠️ API 錯誤' : '載入中';
+  }
+
+  // ---- Google ----
+  const gNum = document.getElementById('ext-google-num');
+  const gRat = document.getElementById('ext-google-rating');
+  const gDel = document.getElementById('ext-google-delta');
+  if (d.google && !d.google.error && d.google.current != null) {
+    gNum.textContent = d.google.current.toLocaleString() + ' 則';
+    gRat.textContent = '⭐ ' + (d.google.rating ?? '—');
+    gDel.textContent = '本週 ' + _fmtDelta(d.google.deltaWeek, ' 則');
+    gDel.className   = 'ext-delta ' + _deltaClass(d.google.deltaWeek);
+  } else {
+    gNum.textContent = '—';
+  }
+
+  // ---- FB ----
+  const fbNum  = document.getElementById('ext-fb-num');
+  const fbDel  = document.getElementById('ext-fb-delta');
+  const fbAsOf = document.getElementById('ext-fb-asof');
+  const fbInp  = document.getElementById('fb-input');
+  if (d.fb && d.fb.current != null) {
+    fbNum.textContent  = d.fb.current.toLocaleString();
+    fbDel.textContent  = '昨日比 ' + _fmtDelta(d.fb.deltaDay);
+    fbDel.className    = 'ext-delta ' + _deltaClass(d.fb.deltaDay);
+    fbAsOf.textContent = '更新於 ' + _fmtMD(d.fb.asOf);
+    if (fbInp) fbInp.placeholder = String(d.fb.current);
+  } else {
+    fbNum.textContent  = '—';
+    fbDel.textContent  = '尚未輸入';
+    fbDel.className    = 'ext-delta flat';
+    fbAsOf.textContent = '請輸入第一筆';
+  }
+}
+
+async function submitFb() {
+  const inp = document.getElementById('fb-input');
+  const btn = document.getElementById('fb-submit');
+  const v = parseInt(inp.value);
+  if (isNaN(v) || v < 0) {
+    inp.focus();
+    return;
+  }
+  btn.disabled = true;
+  btn.textContent = '儲存中...';
+  try {
+    const r = await fetch(`${API_BASE}/fb-set?v=${v}`);
+    const j = await r.json();
+    if (j.ok) {
+      btn.textContent = '✓ 已儲存';
+      btn.classList.add('saved');
+      inp.value = '';
+      await loadExternalStats();
+      setTimeout(() => {
+        btn.textContent = '儲存今日';
+        btn.classList.remove('saved');
+        btn.disabled = false;
+      }, 1500);
+    } else {
+      btn.textContent = '錯誤';
+      setTimeout(() => { btn.textContent = '儲存今日'; btn.disabled = false; }, 1500);
+    }
+  } catch (e) {
+    btn.textContent = '錯誤';
+    setTimeout(() => { btn.textContent = '儲存今日'; btn.disabled = false; }, 1500);
+  }
+}
+
+// 啟動 + 每 5 分鐘自動刷新
+loadExternalStats();
+setInterval(loadExternalStats, 5 * 60 * 1000);
 
 renderTabs();
 loadAll();
