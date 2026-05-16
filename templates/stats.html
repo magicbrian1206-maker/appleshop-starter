@@ -57,6 +57,9 @@
       flex: 1;
       min-height: 0;            /* 取消之前的 min-height 限制,讓 flex 自由分配 */
     }
+    /* 中欄月曆卡撐滿欄高,讓三欄視覺等高 */
+    .cal-card { flex: 1; display: flex; flex-direction: column; }
+    .cal-card .cal-detail { margin-top: auto; }
   }
   /* ===== 寬螢幕三欄佈局（>= 1280px） ===== */
   @media (min-width: 1280px) {
@@ -799,12 +802,12 @@
     </div>
   </div>
 
-  <!-- ===== Excel 下載 ===== -->
-  <button class="download-btn" onclick="exportExcel()">
-    <span>📊</span><span>下載完整紀錄 Excel</span>
-  </button>
-
     </div>  <!-- 右欄結束 -->
+
+    <!-- ===== Excel 下載(全寬,不在任何欄裡) ===== -->
+    <button class="download-btn full-width" onclick="exportExcel()">
+      <span>📊</span><span>下載完整紀錄 Excel</span>
+    </button>
 
   </div>  <!-- main-grid 結束 -->
 

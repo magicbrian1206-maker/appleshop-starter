@@ -1,5 +1,9 @@
 # AppleShop Starter Kit · 更新紀錄
 
+## v1.0.7 — 2026-05-16
+- stats: Excel button full-width; cal-card flex:1 (3 columns equal height)
+
+
 ## v1.0.6 — 2026-05-16
 - Right column 3 rd-trend cards: stretch to equal height matching left column
 
