@@ -1,5 +1,9 @@
 # AppleShop Starter Kit · 更新紀錄
 
+## v1.0.3 — 2026-05-16
+- FB Followers 自動整合:Graph API + 儀表板 + 週報
+
+
 ## v1.0.2 — 2026-05-14
 - 文案調整:儀表板/週報統一用「點選 LINE 好友 / 點進 FB 粉絲團 / 點進 Google 評論」
 

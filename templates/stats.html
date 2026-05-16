@@ -604,18 +604,11 @@
       <!-- FB -->
       <div class="ext-cell fb">
         <div class="ext-icn">👍</div>
-        <div class="ext-label">FB 粉專讚數</div>
+        <div class="ext-label">FB 追蹤數</div>
         <div class="ext-num" id="ext-fb-num">— —</div>
         <div class="ext-sub">
-          <span class="ext-delta flat" id="ext-fb-delta">昨日比 —</span>
-          <span class="ext-asof" id="ext-fb-asof">尚未輸入</span>
-        </div>
-        <div class="ext-fb-form">
-          <input type="number" id="fb-input" min="0" placeholder="今日數" inputmode="numeric"/>
-          <button onclick="submitFb()" id="fb-submit">儲存今日</button>
-        </div>
-        <div class="ext-fb-help">
-          每天到 <a href="https://www.facebook.com/profile.php?id=61586040699143/insights/" target="_blank" rel="noopener">FB Insights</a> 看一次粉絲數,輸入此處
+          <span class="ext-delta flat" id="ext-fb-delta">本週 —</span>
+          <span class="ext-asof" id="ext-fb-asof">—</span>
         </div>
       </div>
     </div>
@@ -1078,52 +1071,22 @@ function renderExternal(d) {
   const fbNum  = document.getElementById('ext-fb-num');
   const fbDel  = document.getElementById('ext-fb-delta');
   const fbAsOf = document.getElementById('ext-fb-asof');
-  const fbInp  = document.getElementById('fb-input');
   if (d.fb && d.fb.current != null) {
     fbNum.textContent  = d.fb.current.toLocaleString();
-    fbDel.textContent  = '昨日比 ' + _fmtDelta(d.fb.deltaDay);
-    fbDel.className    = 'ext-delta ' + _deltaClass(d.fb.deltaDay);
+    fbDel.textContent  = '本週 ' + _fmtDelta(d.fb.deltaWeek);
+    fbDel.className    = 'ext-delta ' + _deltaClass(d.fb.deltaWeek);
     fbAsOf.textContent = '更新於 ' + _fmtMD(d.fb.asOf);
-    if (fbInp) fbInp.placeholder = String(d.fb.current);
   } else {
     fbNum.textContent  = '—';
-    fbDel.textContent  = '尚未輸入';
+    fbDel.textContent  = '載入中';
     fbDel.className    = 'ext-delta flat';
-    fbAsOf.textContent = '請輸入第一筆';
+    fbAsOf.textContent = '—';
   }
 }
 
+// 自動模式下不再需要手動輸入（保留 stub 避免舊 onclick 報錯）
 async function submitFb() {
-  const inp = document.getElementById('fb-input');
-  const btn = document.getElementById('fb-submit');
-  const v = parseInt(inp.value);
-  if (isNaN(v) || v < 0) {
-    inp.focus();
-    return;
-  }
-  btn.disabled = true;
-  btn.textContent = '儲存中...';
-  try {
-    const r = await fetch(`${API_BASE}/fb-set?v=${v}`);
-    const j = await r.json();
-    if (j.ok) {
-      btn.textContent = '✓ 已儲存';
-      btn.classList.add('saved');
-      inp.value = '';
-      await loadExternalStats();
-      setTimeout(() => {
-        btn.textContent = '儲存今日';
-        btn.classList.remove('saved');
-        btn.disabled = false;
-      }, 1500);
-    } else {
-      btn.textContent = '錯誤';
-      setTimeout(() => { btn.textContent = '儲存今日'; btn.disabled = false; }, 1500);
-    }
-  } catch (e) {
-    btn.textContent = '錯誤';
-    setTimeout(() => { btn.textContent = '儲存今日'; btn.disabled = false; }, 1500);
-  }
+  console.warn('submitFb is deprecated — FB followers are now auto-fetched via Graph API');
 }
 
 // 啟動 + 每 5 分鐘自動刷新

@@ -28,6 +28,15 @@ async function fetchKey(key) {
   } catch (e) { return 0; }
 }
 
+// 抓取外部真實數據 (LINE 好友 / Google 評論 / FB 追蹤)
+async function fetchExternal() {
+  try {
+    const r = await fetch(`https://tsann-counter.magicbrian1206.workers.dev/external`);
+    if (!r.ok) return null;
+    return await r.json();
+  } catch (e) { return null; }
+}
+
 function lastNDays(n, offsetDays=0) {
   const arr = [];
   for (let i = 0; i < n; i++) {
@@ -125,10 +134,14 @@ async function buildReport() {
   const lastWeekTotals = BRANDS.map(b => lastWeekData[b.key].reduce((a,b)=>a+b,0));
   const lifetimeCounts = await Promise.all(BRANDS.map(b => fetchKey(b.key)));
 
+  // 外部真實數據 (LINE 好友、Google 評論、FB 追蹤)
+  const external = await fetchExternal();
+
   return {
     today, week, lastWeek, month4Weeks,
     weekData, lastWeekData, month4Data,
-    weekTotals, lastWeekTotals, lifetimeCounts
+    weekTotals, lastWeekTotals, lifetimeCounts,
+    external,
   };
 }
 
@@ -189,6 +202,60 @@ function buildHtmlEmail(r) {
     `;
   }).join('');
 
+  // 外部真實數據卡片(LINE 好友 / Google 評論 / FB 追蹤)
+  const ext = r.external || {};
+  const fmtDelta = (n, unit='') => {
+    if (n == null) return '—';
+    if (n === 0)   return '±0' + unit;
+    return (n > 0 ? '+' : '') + n + unit;
+  };
+  const deltaColor = n => (n == null || n === 0) ? '#888' : (n > 0 ? '#06C755' : '#EA4335');
+
+  const extCards = (() => {
+    if (!ext) return '';
+    const cards = [];
+    if (ext.line && ext.line.current != null) {
+      cards.push({
+        icon: '💬', label: 'LINE 好友', color: '#06C755',
+        num: ext.line.current.toLocaleString(),
+        sub: '本週 ' + fmtDelta(ext.line.deltaWeek),
+        subColor: deltaColor(ext.line.deltaWeek),
+      });
+    }
+    if (ext.google && ext.google.current != null) {
+      cards.push({
+        icon: '⭐', label: 'Google 評論', color: '#EA4335',
+        num: ext.google.current.toLocaleString() + ' 則',
+        sub: '⭐ ' + (ext.google.rating ?? '—') + ' · 本週 ' + fmtDelta(ext.google.deltaWeek, ' 則'),
+        subColor: deltaColor(ext.google.deltaWeek),
+      });
+    }
+    if (ext.fb && ext.fb.current != null) {
+      cards.push({
+        icon: '👍', label: 'FB 追蹤', color: '#1877F2',
+        num: ext.fb.current.toLocaleString(),
+        sub: '本週 ' + fmtDelta(ext.fb.deltaWeek),
+        subColor: deltaColor(ext.fb.deltaWeek),
+      });
+    }
+    if (cards.length === 0) return '';
+    return `
+      <h3 style="margin:24px 0 8px;font-size:15px;border-left:3px solid #FFD500;padding-left:8px;">📡 真實數據(本週變化)</h3>
+      <table cellspacing="0" cellpadding="0" border="0" width="100%" style="border-collapse:separate;border-spacing:8px 0;">
+        <tr>
+          ${cards.map(c => `
+            <td style="width:33.33%;background:#fafafa;border:1px solid #eee;border-radius:10px;padding:14px 8px;text-align:center;border-top:3px solid ${c.color};">
+              <div style="font-size:20px;line-height:1;">${c.icon}</div>
+              <div style="font-size:11px;color:#888;margin:6px 0 4px;letter-spacing:0.5px;">${c.label}</div>
+              <div style="font-size:22px;font-weight:800;color:#1d1d1f;line-height:1.1;">${c.num}</div>
+              <div style="font-size:11px;color:${c.subColor};margin-top:4px;font-weight:600;">${c.sub}</div>
+            </td>
+          `).join('')}
+        </tr>
+      </table>
+    `;
+  })();
+
   return `<!DOCTYPE html>
 <html><body style="margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,'PingFang TC','Microsoft JhengHei',sans-serif;background:#f5f5f7;color:#1d1d1f;">
 <table cellspacing="0" cellpadding="0" border="0" align="center" width="600" style="margin:24px auto;background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 4px 16px rgba(0,0,0,0.08);">
@@ -220,6 +287,8 @@ function buildHtmlEmail(r) {
         </tr>
         ${recordRows}
       </table>
+
+      ${extCards}
 
       <!-- 本週每日柱狀圖 -->
       <h3 style="margin:24px 0 8px;font-size:15px;border-left:3px solid #FFD500;padding-left:8px;">📊 本週每日點擊</h3>
