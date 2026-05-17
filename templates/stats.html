@@ -34,9 +34,9 @@
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 16px;
-      align-items: stretch;     /* 各欄等高(撐到最高那欄) */
+      align-items: stretch;     /* 三欄等高(撐到最高那欄,通常是中欄月曆) */
     }
-    /* 每欄變成 flex column,讓裡面的卡片可以 flex:1 撐滿 */
+    /* 每欄是 flex column,讓裡面的卡片可以 flex:1 撐滿 */
     .main-grid > div {
       display: flex;
       flex-direction: column;
@@ -47,7 +47,20 @@
     .main-grid > div > *:first-child {
       margin-top: 0 !important;
     }
-    /* 含有 .rd-trend 子元素的 chart-card 撐滿剩餘空間,3 張卡平分 */
+    /* === 中欄:cal-card 撐滿欄高,內部元件保持自然(slack 由 cal-card 深灰背景吸收) === */
+    .cal-card {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+    .cal-card .cal-grid {
+      grid-auto-rows: minmax(38px, 46px);
+    }
+    .cal-card .cal-cell {
+      aspect-ratio: auto;
+      min-height: 38px;
+    }
+    /* === 右欄:chart-card 撐滿欄高,3 張趨勢卡 flex:1 均分填滿(避免下方深灰空白) === */
     .chart-card:has(.rd-trend) {
       flex: 1;
       display: flex;
@@ -55,11 +68,12 @@
     }
     .chart-card:has(.rd-trend) > .rd-trend {
       flex: 1;
-      min-height: 0;            /* 取消之前的 min-height 限制,讓 flex 自由分配 */
+      min-height: 0;
     }
-    /* 中欄月曆卡撐滿欄高,讓三欄視覺等高 */
-    .cal-card { flex: 1; display: flex; flex-direction: column; }
-    .cal-card .cal-detail { margin-top: auto; }
+    /* === 左欄 3 張 stat 小卡保持自然高度,Excel 緊接 meta 下方 === */
+    .stat {
+      flex: 0 0 auto;
+    }
   }
   /* ===== 寬螢幕三欄佈局（>= 1280px） ===== */
   @media (min-width: 1280px) {
@@ -70,8 +84,8 @@
     }
     .full-width { grid-column: 1 / -1; }
     /* 三環縮小一點 */
-    .rings-wrap { width: 200px; height: 200px; }
-    .rings-center .total-num { font-size: 34px; }
+    .rings-wrap { width: 170px; height: 170px; }
+    .rings-center .total-num { font-size: 30px; }
     .chart-wrap { height: 180px; }
     .rd-chart-wrap { height: 60px; }
     .stat { padding: 12px 14px; }
@@ -145,8 +159,8 @@
   .rings-card {
     background: linear-gradient(180deg, #1c1c1e 0%, #0a0a0a 100%);
     border-radius: 22px;
-    padding: 20px 16px 16px;
-    margin-bottom: 12px;
+    padding: 14px 16px 12px;
+    margin-bottom: 10px;
     border: 1px solid rgba(255,255,255,0.06);
   }
   .period-label {
@@ -160,8 +174,8 @@
   .period-label .name { color: #FFD500; font-weight: 700; }
   .rings-wrap {
     position: relative;
-    width: 230px; height: 230px;
-    margin: 0 auto 10px;
+    width: 190px; height: 190px;
+    margin: 0 auto 8px;
   }
   .rings-wrap svg { width: 100%; height: 100%; transform: rotate(-90deg); }
   .ring-bg { fill: none; stroke-linecap: round; }
@@ -268,7 +282,7 @@
   .cal-card {
     background: #1c1c1e;
     border-radius: 18px;
-    padding: 16px;
+    padding: 12px;
     margin-top: 14px;
     border: 1px solid rgba(255,255,255,0.06);
   }
@@ -308,7 +322,7 @@
     gap: 4px;
   }
   .cal-cell {
-    aspect-ratio: 1;
+    aspect-ratio: 1.6;
     display: flex; flex-direction: column;
     align-items: center; justify-content: center;
     background: transparent;
@@ -344,8 +358,8 @@
 
   /* 日明細 */
   .cal-detail {
-    margin-top: 14px;
-    padding-top: 14px;
+    margin-top: 10px;
+    padding-top: 10px;
     border-top: 1px solid rgba(255,255,255,0.08);
   }
   .cal-detail .day-title {
@@ -368,7 +382,7 @@
   }
   .cal-detail .day-row {
     display: flex; align-items: center; gap: 12px;
-    padding: 10px 12px;
+    padding: 11px 12px;
     background: #2c2c2e;
     border-radius: 10px;
     border-left: 3px solid var(--gray-500);
@@ -415,12 +429,12 @@
 
   /* ===== 真實數據趨勢卡 (rd-trend) ===== */
   .rd-trend {
-    margin-top: 14px;
-    padding: 14px;
+    margin-top: 10px;
+    padding: 10px 12px;
     background: #1c1c1e;
     border-radius: 12px;
     border-left: 3px solid;
-    min-height: 150px;
+    min-height: 100px;
     display: flex;
     flex-direction: column;
   }
@@ -484,12 +498,12 @@
     background: #1c1c1e;
     border: 1px solid #2a2a2c;
     border-radius: 18px;
-    padding: 16px 18px;
-    margin: 0 0 16px;
+    padding: 8px 16px 10px;
+    margin: 0 0 10px;
   }
   .ext-head {
     display: flex; align-items: center; justify-content: space-between;
-    margin-bottom: 14px;
+    margin-bottom: 6px;
   }
   .ext-head h3 {
     font-size: 15px; font-weight: 600;
@@ -508,10 +522,10 @@
   .ext-cell {
     background: #000;
     border-radius: 14px;
-    padding: 14px 14px 12px;
+    padding: 8px 12px 6px;
     border: 1px solid #2a2a2c;
     position: relative;
-    min-height: 110px;
+    min-height: 68px;
   }
   .ext-cell.line   { border-left: 3px solid var(--line); }
   .ext-cell.google { border-left: 3px solid var(--google-2); }
@@ -522,14 +536,14 @@
     letter-spacing: 0.5px; text-transform: uppercase;
   }
   .ext-num {
-    font-size: 32px; font-weight: 700;
+    font-size: 24px; font-weight: 700;
     font-variant-numeric: tabular-nums;
-    margin-top: 2px; line-height: 1.1;
+    margin-top: 0; line-height: 1.1;
     color: #fff;
   }
   .ext-sub {
     display: flex; flex-wrap: wrap; gap: 8px;
-    font-size: 11px; margin-top: 6px;
+    font-size: 11px; margin-top: 2px;
   }
   .ext-delta { font-weight: 700; }
   .ext-delta.up   { color: #30D158; }
@@ -721,6 +735,11 @@
 
   <div class="meta" id="meta">資料載入中...</div>
 
+  <!-- ===== Excel 下載(緊接 meta 下方,無多餘空白) ===== -->
+  <button class="download-btn" onclick="exportExcel()">
+    <span>📊</span><span>下載完整紀錄 Excel</span>
+  </button>
+
     </div>  <!-- 左欄結束 -->
 
     <!-- ============ 中欄：月曆 + 折線圖 ============ -->
@@ -809,11 +828,6 @@
   </div>
 
     </div>  <!-- 右欄結束 -->
-
-    <!-- ===== Excel 下載(全寬,不在任何欄裡) ===== -->
-    <button class="download-btn full-width" onclick="exportExcel()">
-      <span>📊</span><span>下載完整紀錄 Excel</span>
-    </button>
 
   </div>  <!-- main-grid 結束 -->
 

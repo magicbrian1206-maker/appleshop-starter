@@ -1,5 +1,9 @@
 # AppleShop Starter Kit · 更新紀錄
 
+## v1.0.9 — 2026-05-17
+- Restore desktop layout + keep mobile ext-card fix
+
+
 ## v1.0.8 — 2026-05-17
 - Mobile: reorder ext-card to bottom so rings appear above the fold
 
