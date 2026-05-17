@@ -81,6 +81,12 @@
   /* 手機/平板維持單欄 */
   @media (max-width: 899px) {
     .main-grid > * { grid-column: 1; }
+    /* 手機版重新排序:讓三環(主要功能)先出現,真實數據卡移到最底 */
+    .wrap { display: flex; flex-direction: column; }
+    .wrap > header     { order: 0; }
+    .wrap > #tabs      { order: 1; }
+    .wrap > .main-grid { order: 2; }
+    .wrap > #ext-card  { order: 3; margin-top: 14px; margin-bottom: 0; }
   }
 
   /* 標題 */
