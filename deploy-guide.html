@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AppleShop 開店產生器｜部署上線教學</title>
+<style>
+  :root{
+    --yellow:#FFD500;
+    --ink:#1d1d1f;
+    --gray:#6e6e73;
+    --line:#e5e5e7;
+    --bg:#f5f5f7;
+    --card:#ffffff;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"SF Pro TC","PingFang TC","Helvetica Neue",Arial,sans-serif;
+    background:var(--bg);
+    color:var(--ink);
+    line-height:1.7;
+    -webkit-font-smoothing:antialiased;
+    padding:0 0 60px;
+  }
+  .hero{
+    background:linear-gradient(160deg,#FFD500 0%,#ffdf40 100%);
+    padding:48px 24px 40px;
+    text-align:center;
+  }
+  .hero .emoji{font-size:52px;line-height:1;}
+  .hero h1{
+    font-size:26px;font-weight:800;margin-top:12px;letter-spacing:-.5px;color:#1d1d1f;
+  }
+  .hero p{margin-top:10px;font-size:15px;color:#4a4318;font-weight:500;}
+  .wrap{max-width:640px;margin:0 auto;padding:0 20px;}
+  .card{
+    background:var(--card);
+    border-radius:20px;
+    padding:24px 22px;
+    margin-top:20px;
+    box-shadow:0 1px 3px rgba(0,0,0,.06);
+  }
+  .step-num{
+    display:inline-flex;align-items:center;justify-content:center;
+    width:32px;height:32px;border-radius:50%;
+    background:var(--yellow);color:#1d1d1f;font-weight:800;font-size:15px;
+    margin-right:10px;flex:0 0 auto;
+  }
+  .step-head{display:flex;align-items:center;margin-bottom:14px;}
+  .step-head h2{font-size:19px;font-weight:700;letter-spacing:-.3px;}
+  ol,ul{margin:6px 0 0 4px;padding-left:22px;}
+  li{margin-bottom:8px;font-size:15.5px;}
+  .btn{
+    display:inline-block;background:#1d1d1f;color:#fff;text-decoration:none;
+    padding:13px 22px;border-radius:12px;font-weight:600;font-size:15.5px;
+    margin-top:14px;transition:opacity .2s;
+  }
+  .btn:hover{opacity:.85;}
+  code{
+    background:#f0f0f2;border-radius:6px;padding:2px 7px;font-size:14px;
+    font-family:"SF Mono",ui-monospace,Menlo,monospace;color:#c7254e;
+    word-break:break-all;
+  }
+  .url{
+    display:block;background:#f0f0f2;border-radius:10px;padding:12px 14px;
+    font-family:"SF Mono",ui-monospace,Menlo,monospace;font-size:14px;
+    margin-top:10px;word-break:break-all;color:#1d1d1f;
+  }
+  .note{
+    background:#fff8dc;border-left:4px solid var(--yellow);
+    border-radius:0 10px 10px 0;padding:12px 16px;margin-top:14px;font-size:14.5px;
+  }
+  .section-label{
+    font-size:13px;font-weight:700;color:var(--gray);
+    text-transform:uppercase;letter-spacing:1px;margin:36px 4px 0;
+  }
+  .faq details{
+    border-bottom:1px solid var(--line);padding:14px 2px;
+  }
+  .faq details:last-child{border-bottom:none;}
+  .faq summary{
+    font-weight:600;font-size:16px;cursor:pointer;list-style:none;
+    display:flex;justify-content:space-between;align-items:center;
+  }
+  .faq summary::-webkit-details-marker{display:none;}
+  .faq summary::after{content:"＋";color:var(--gray);font-weight:400;font-size:20px;}
+  .faq details[open] summary::after{content:"－";}
+  .faq p{margin-top:10px;font-size:15px;color:#333;}
+  .footer{text-align:center;color:var(--gray);font-size:14px;margin-top:40px;}
+  .highlight{background:linear-gradient(transparent 60%,#FFE87066 60%);font-weight:600;}
+  /* 真實數據三選一 */
+  .opt{
+    border:1.5px solid var(--line);border-radius:14px;padding:14px 16px;margin-top:12px;
+  }
+  .opt.rec{border-color:var(--yellow);background:#fffdf2;}
+  .opt .tag{
+    display:inline-block;font-size:12px;font-weight:800;padding:2px 9px;border-radius:20px;
+    background:var(--yellow);color:#4a4318;margin-left:8px;vertical-align:middle;
+  }
+  .opt h3{font-size:16px;font-weight:700;}
+  .opt p{font-size:14px;color:var(--gray);margin-top:4px;}
+  /* 分流卡 */
+  .pick{
+    display:flex;align-items:center;justify-content:space-between;gap:12px;
+    border:1.5px solid var(--line);border-radius:14px;padding:14px 16px;margin-top:12px;
+    text-decoration:none;color:var(--ink);transition:border-color .2s,background .2s;
+  }
+  .pick:hover{border-color:var(--yellow);background:#fffdf2;}
+  .pick b{font-size:16px;}
+  .pick p{font-size:13.5px;color:var(--gray);margin-top:3px;}
+  .pick-go{flex:0 0 auto;font-size:13px;font-weight:700;color:#4a4318;
+    background:var(--yellow);padding:6px 12px;border-radius:20px;white-space:nowrap;}
+  .divider{height:1px;background:var(--line);margin:44px 0 0;}
+  .big-label{
+    font-size:22px;font-weight:800;letter-spacing:-.3px;margin:30px 4px 0;
+    display:flex;align-items:center;gap:10px;
+  }
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="emoji">🏪</div>
+  <h1>AppleShop 開店產生器</h1>
+  <p>部署上線教學 · 跟著做 5～10 分鐘完成 · 全程免寫程式</p>
+</div>
+
+<div class="wrap">
+
+  <!-- 分流：你是哪一種？ -->
+  <div class="card" style="border:2px solid var(--yellow);">
+    <div class="step-head"><span class="step-num">👉</span><h2>先看你是哪一種？</h2></div>
+    <a class="pick" href="#new">
+      <div>
+        <b>🆕 第一次開店</b>
+        <p>還沒有網站，要從頭架一個。</p>
+      </div>
+      <span class="pick-go">看這裡 ↓</span>
+    </a>
+    <a class="pick" href="#update">
+      <div>
+        <b>🔄 已經開過店，要更新</b>
+        <p>網站已經有了，只想把上面那排數字改成自己的、或換成新版。</p>
+      </div>
+      <span class="pick-go">看這裡 ↓</span>
+    </a>
+  </div>
+
+  <!-- ============ 新開店 ============ -->
+  <div id="new" class="big-label">🆕 第一次開店</div>
+
+  <!-- Step 0 -->
+  <div class="card">
+    <div class="step-head"><span class="step-num">0</span><h2>產生你的店家網站包</h2></div>
+    <ol>
+      <li>打開開店產生器（下方按鈕）</li>
+      <li>填入店名、電話、地址、營業時間</li>
+      <li>填入 LINE 加好友、Facebook 粉絲團、Google 評論三個連結</li>
+      <li>填 GitHub 帳號名（還沒帳號沒關係，先填一個等下要註冊的名字）；Repo 名稱用預設 <code>appleshop</code></li>
+      <li>「進階選項 → 真實數據」選一個模式（見下方說明）</li>
+      <li>按「產生」→ 下載 <code>appleshop.zip</code> → 解壓縮</li>
+    </ol>
+    <div class="note">zip 裡有一份 <b>INSTALL.md</b>，是這份教學的個人化版本，連你的網址都幫你填好了。</div>
+    <a class="btn" href="https://magicbrian1206-maker.github.io/appleshop-starter/" target="_blank">🚀 打開開店產生器</a>
+  </div>
+
+  <!-- 真實數據三選一 -->
+  <div class="card">
+    <div class="step-head"><span class="step-num">📡</span><h2>「真實數據」要選哪個？</h2></div>
+    <p style="font-size:15px;color:var(--gray);">頁面最上面那排數字（LINE 好友、Google 評論、FB 追蹤數）要不要顯示，三選一。<span class="highlight">不確定就選第一個。</span></p>
+
+    <div class="opt rec">
+      <h3>① 單純顯示<span class="tag">推薦</span></h3>
+      <p>不顯示那排粉絲數，只看客人點了幾次。什麼都不用設定，開箱即用，最輕鬆。</p>
+    </div>
+
+    <div class="opt">
+      <h3>② 手動填數字</h3>
+      <p>顯示你自己的 LINE / Google / FB 數字，自己填、隨時可改（照 INSTALL.md 開個網址就更新），系統還會自動幫你畫趨勢圖。零技術門檻。</p>
+    </div>
+
+    <div class="opt">
+      <h3>③ API 自動串接<span class="tag" style="background:#e5e5e7;color:#6e6e73;">進階</span></h3>
+      <p>全自動抓最新數字，但需要自備 Cloudflare Worker 與各平台 API 金鑰，設定較複雜。zip 裡會附 <code>REAL-DATA-API.md</code> 教學。大多數店家用②就很夠了。</p>
+    </div>
+  </div>
+
+  <!-- Step 1 -->
+  <div class="card">
+    <div class="step-head"><span class="step-num">1</span><h2>註冊 GitHub 帳號</h2></div>
+    <p style="font-size:15px;color:var(--gray);margin-bottom:8px;">已經有帳號可跳過這步。</p>
+    <ol>
+      <li>前往 <a href="https://github.com/signup" target="_blank">github.com/signup</a> 註冊（約 1 分鐘）</li>
+      <li><span class="highlight">帳號名要跟第 0 步填的「GitHub 帳號名」一致</span></li>
+    </ol>
+  </div>
+
+  <!-- Step 2 -->
+  <div class="card">
+    <div class="step-head"><span class="step-num">2</span><h2>建立一個新的 Repository</h2></div>
+    <ol>
+      <li>登入 GitHub → 右上角 <b>＋ → New repository</b></li>
+      <li>Repository name 填 <code>appleshop</code>（跟第 0 步一致）</li>
+      <li>選 <b>Public</b>（免費版 Pages 需要 Public）</li>
+      <li>不要勾 "Add a README file"</li>
+      <li>按 <b>Create repository</b></li>
+    </ol>
+  </div>
+
+  <!-- Step 3 -->
+  <div class="card">
+    <div class="step-head"><span class="step-num">3</span><h2>上傳網站檔案</h2></div>
+    <ol>
+      <li>在空 repo 頁面點 <b>「uploading an existing file」</b></li>
+      <li>把解壓後的<b>所有檔案</b>整個拖進去（若有 <code>.github/</code>、<code>scripts/</code> 子資料夾也一起拖）</li>
+      <li>下方按 <b>Commit changes</b></li>
+    </ol>
+    <div class="note">💡 <code>.github</code> 資料夾開頭有「.」，Mac 預設是隱藏的。在 Finder 按 <b>⌘ + Shift + .</b> 就能看到，記得一起拖進去。</div>
+  </div>
+
+  <!-- Step 4 -->
+  <div class="card">
+    <div class="step-head"><span class="step-num">4</span><h2>開啟 GitHub Pages</h2></div>
+    <ol>
+      <li>Repo 上方 <b>Settings → 左側 Pages</b></li>
+      <li>Source 選 <b>Deploy from a branch</b></li>
+      <li>Branch 選 <code>main</code>，資料夾選 <code>/ (root)</code> → <b>Save</b></li>
+      <li>等 30～60 秒，頁面上方會出現你的網址：</li>
+    </ol>
+    <span class="url">https://&lt;你的帳號名&gt;.github.io/appleshop/</span>
+  </div>
+
+  <!-- Step 5 -->
+  <div class="card">
+    <div class="step-head"><span class="step-num">5</span><h2>測試（重要！）</h2></div>
+    <ul>
+      <li>🌐 店家網站 = <code>https://&lt;帳號名&gt;.github.io/appleshop/</code></li>
+      <li>📊 後台儀表板 = 同網址加上 <code>/stats.html</code></li>
+      <li>📱 <span class="highlight">用手機</span>掃 zip 裡的 <code>qrcode-final.png</code></li>
+      <li>點一下 LINE / Facebook / Google 按鈕</li>
+      <li>再打開 stats.html，數字就會跳動 ✨</li>
+    </ul>
+  </div>
+
+  <!-- ============ 已開店更新 ============ -->
+  <div class="divider"></div>
+  <div id="update" class="big-label">🔄 已經開過店，要更新</div>
+  <div class="card" style="background:#fffdf2;">
+    <p style="font-size:15px;">你已經有網站了，只是想<b>把上面那排數字改成自己的</b>（原本可能顯示到別人的），或換成新版。<br>你<span class="highlight">不用重新註冊、不用重建網站</span>，只要換一個檔案就好。</p>
+  </div>
+
+  <!-- 更新 Step 1 -->
+  <div class="card">
+    <div class="step-head"><span class="step-num">1</span><h2>重新產一份新檔</h2></div>
+    <ol>
+      <li>打開開店產生器（下方按鈕），填一次你的店家資料</li>
+      <li>「進階選項 → 真實數據」選你要的模式（<b>①單純顯示</b> 最輕鬆；<b>②手動填數字</b> 想顯示自己的粉絲數）</li>
+      <li>按「產生」→ 下載 zip → 解壓縮，裡面有一個 <code>stats.html</code></li>
+    </ol>
+    <a class="btn" href="https://magicbrian1206-maker.github.io/appleshop-starter/" target="_blank">🚀 打開開店產生器</a>
+  </div>
+
+  <!-- 更新 Step 2 -->
+  <div class="card">
+    <div class="step-head"><span class="step-num">2</span><h2>去 GitHub 換掉舊的 stats.html</h2></div>
+    <ol>
+      <li>用電腦開 <a href="https://github.com" target="_blank">github.com</a> 並登入</li>
+      <li>點進你當初放這個店網站的「倉庫（repository）」，名字裡通常有 <code>appleshop</code> 或你的店名</li>
+      <li>右上角點 <b>Add file ▾ → Upload files</b></li>
+      <li>把剛下載的新 <code>stats.html</code> 拖進去<span class="highlight">（檔名要一樣叫 stats.html，才會蓋掉舊的）</span></li>
+      <li>往下捲，按綠色 <b>Commit changes</b></li>
+      <li>等約 1 分鐘，網站就更新好了 ✅</li>
+    </ol>
+    <div class="note">💡 只需要換 <code>stats.html</code> 這一個檔，其他檔案都不用動。</div>
+  </div>
+
+  <!-- 更新 Step 3 -->
+  <div class="card">
+    <div class="step-head"><span class="step-num">3</span><h2>確認 & 填數字（選了②的人）</h2></div>
+    <ul>
+      <li>打開你的 <code>stats.html</code>，上面那排數字應該不再是別人的了</li>
+      <li>若你選 <b>①單純顯示</b> → 那排粉絲數會消失，只剩點擊活動，完成！</li>
+      <li>若你選 <b>②手動填數字</b> → 照 zip 裡的 <code>INSTALL.md</code>，開一個網址就能填入自己的 LINE / Google / FB 數字（之後隨時可改，還會自動畫趨勢圖）</li>
+    </ul>
+  </div>
+
+  <!-- FAQ -->
+  <div class="section-label">常見問題</div>
+  <div class="card faq">
+    <details>
+      <summary>後台在哪？要另外登入嗎？</summary>
+      <p>後台就是你網站的 <code>stats.html</code> 頁面，不用登入，打開網址就能看。</p>
+    </details>
+    <details>
+      <summary>為什麼點了按鈕，數字沒有增加？</summary>
+      <p>用「電腦」點不算數（防灌水設計）。請務必<b>用手機</b>掃 QR 後再點按鈕。</p>
+    </details>
+    <details>
+      <summary>「真實數據」那排數字怎麼是空白 / 顯示「—」？</summary>
+      <p>如果你選了 <b>②手動填數字</b>，一開始是空的很正常，照 zip 裡的 INSTALL.md 開一個網址填入你的數字就會出現。如果你選 <b>①單純顯示</b>，本來就不會有那排數字。</p>
+    </details>
+    <details>
+      <summary>我的數字會跟別人混在一起嗎？</summary>
+      <p>不會。每家店有獨立的資料空間，你只會看到自己店的數據，完全隔離。</p>
+    </details>
+    <details>
+      <summary>網址打開是 404 或空白？</summary>
+      <p>Pages 剛開啟需要等 1～2 分鐘；也請確認第 3 步的檔案有上傳成功（repo 裡要看得到 <code>index.html</code>）。</p>
+    </details>
+  </div>
+
+  <div class="footer">有問題隨時問我 🙌</div>
+
+</div>
+</body>
+</html>
