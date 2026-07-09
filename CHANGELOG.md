@@ -1,5 +1,9 @@
 # AppleShop Starter Kit · 更新紀錄
 
+## v1.0.10 — 2026-07-09
+- 新增真實數據三模式(單純/手動/API),開店器可自選
+
+
 ## v1.0.9 — 2026-05-17
 - Restore desktop layout + keep mobile ext-card fix
 

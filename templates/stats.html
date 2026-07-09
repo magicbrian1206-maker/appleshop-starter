@@ -835,6 +835,9 @@
 
 <script>
 const NS = 'tsann-kuen-appleshop';
+// ===== 真實數據模式：'off' 純點擊 / 'manual' 手動填數字 / 'api' 自動串接 =====
+// 產生器會依店家選擇改這一行；預設 api = 打自己的 /external 端點
+const REAL_DATA_MODE = 'api';   /*__REAL_DATA_MODE__*/
 const BRANDS = ['line', 'fb', 'google'];
 // Abacus 鍵長度至少 3 字元，因此 fb 的資料鍵使用 'facebook'（UI 用 fb，資料用 facebook）
 const DATA_KEY = { line: 'line', fb: 'facebook', google: 'google' };
@@ -1046,11 +1049,81 @@ async function loadAll(force=false){
 }
 
 // =============== 真實數據卡 (LINE 好友 / Google 評論 / FB 粉絲) ===============
+// ===== 真實數據取得（依模式）=====
+// 回傳與 /external 相同結構： {line:{...}, google:{...}, fb:{...}}
+async function fetchExternalData() {
+  if (REAL_DATA_MODE === 'manual') {
+    return await buildManualExternal();
+  }
+  const r = await fetch(`${API_BASE}/external`);
+  if (!r.ok) throw new Error('HTTP ' + r.status);
+  return await r.json();
+}
+
+// manual 模式：從自己的 namespace 讀 rd-* 鍵，組成 /external 結構
+// 目前值鍵： rd-line / rd-fb / rd-google / rd-google-rating
+// 每日快照鍵： rd-<key>-d-YYYYMMDD （載入時自動寫入當天值，隔天起累積出趨勢）
+async function buildManualExternal() {
+  const todayYmd = (() => {
+    const d = new Date();
+    return d.getFullYear().toString()
+      + String(d.getMonth() + 1).padStart(2, '0')
+      + String(d.getDate()).padStart(2, '0');
+  })();
+
+  async function series(rdKey) {
+    const current = await fetchKey(rdKey);
+    // 寫入今天快照（用現成 /set，冪等）
+    if (current > 0) {
+      try { await fetch(`${API_BASE}/set/${NS}/${rdKey}-d-${todayYmd}?v=${current}`); }
+      catch (e) { /* 快照失敗不影響顯示 */ }
+    }
+    // 抓最近 60 天快照組 history（最新在前）
+    const days = [];
+    const base = new Date();
+    for (let i = 0; i < 60; i++) {
+      const dd = new Date(base); dd.setDate(base.getDate() - i);
+      const ymd = dd.getFullYear().toString()
+        + String(dd.getMonth() + 1).padStart(2, '0')
+        + String(dd.getDate()).padStart(2, '0');
+      days.push(ymd);
+    }
+    const vals = await Promise.all(days.map(ymd => fetchKey(`${rdKey}-d-${ymd}`)));
+    const history = [];
+    for (let i = 0; i < days.length; i++) {
+      if (vals[i] > 0) history.push({ date: days[i], value: vals[i] });
+    }
+    // deltaWeek / deltaMonth：current - 7天前/30天前（有資料才算）
+    const valAt = n => {
+      const dd = new Date(base); dd.setDate(base.getDate() - n);
+      const ymd = dd.getFullYear().toString()
+        + String(dd.getMonth() + 1).padStart(2, '0')
+        + String(dd.getDate()).padStart(2, '0');
+      const hit = history.find(h => h.date === ymd);
+      return hit ? hit.value : null;
+    };
+    const w = valAt(7), m = valAt(30);
+    return {
+      current,
+      deltaWeek:  (w != null) ? current - w : null,
+      deltaMonth: (m != null) ? current - m : null,
+      asOf: todayYmd,
+      history,
+    };
+  }
+
+  const [line, fb, google] = await Promise.all([
+    series('rd-line'), series('rd-fb'), series('rd-google'),
+  ]);
+  google.rating = await fetchKey('rd-google-rating') || null;
+  if (google.rating) google.rating = (google.rating / 10).toFixed(1); // 存 48 → 顯示 4.8
+  return { line, fb, google };
+}
+
 async function loadExternalStats() {
+  if (REAL_DATA_MODE === 'off') return;   // 純點擊模式，不顯示真實數據
   try {
-    const r = await fetch(`${API_BASE}/external`);
-    if (!r.ok) throw new Error('HTTP ' + r.status);
-    const j = await r.json();
+    const j = await fetchExternalData();
     renderExternal(j);
     const updatedTxt = j.cached
       ? '快取資料 (5 分鐘內更新一次)'
@@ -1129,7 +1202,17 @@ async function submitFb() {
   console.warn('submitFb is deprecated — FB followers are now auto-fetched via Graph API');
 }
 
-// 啟動 + 每 5 分鐘自動刷新
+// off 模式：直接隱藏真實數據卡 + 趨勢卡
+if (REAL_DATA_MODE === 'off') {
+  const extCard = document.getElementById('ext-card');
+  if (extCard) extCard.style.display = 'none';
+  // 趨勢卡：找到含「真實數據趨勢」標題的 chart-card 隱藏
+  document.querySelectorAll('.chart-card h3').forEach(h => {
+    if (h.textContent.includes('真實數據趨勢')) h.closest('.chart-card').style.display = 'none';
+  });
+}
+
+// 啟動 + 每 5 分鐘自動刷新（off 模式下函式會自行 return）
 loadExternalStats();
 setInterval(loadExternalStats, 5 * 60 * 1000);
 
@@ -1338,10 +1421,9 @@ function _rdRenderChart(canvasId, history, color) {
 }
 
 async function renderExternalCharts() {
+  if (REAL_DATA_MODE === 'off') return;   // 純點擊模式，不顯示趨勢
   try {
-    const r = await fetch(`${API_BASE}/external`);
-    if (!r.ok) throw new Error('HTTP ' + r.status);
-    const d = await r.json();
+    const d = await fetchExternalData();
 
     const sources = [
       { key: 'line',   color: '#06C755', canvas: 'rd-line-chart',   curEl: 'rd-line-cur',   delEl: 'rd-line-deltas' },
