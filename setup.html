@@ -98,16 +98,6 @@
   </header>
 
   <form id="storeForm">
-    <section class="card" style="background:linear-gradient(135deg,#fff8d6,#fff3b0);border:2px dashed #FFD500;">
-      <h2>📂 已經是老用戶?上傳舊設定一鍵填表</h2>
-      <p class="hint">之前下載過產生器嗎?把當時 zip 裡的 <code style="background:#fff;padding:2px 6px;border-radius:4px;">shop-config.json</code> 拖進來 → 表單自動填完 → 直接下載新版檔案</p>
-      <label class="file-drop" id="configDrop" style="border-color:#FFD500;">
-        <input type="file" accept=".json,application/json" id="configInput">
-        <div class="icon">📂</div>
-        <div class="name" id="configName">點擊或拖入 shop-config.json(可跳過)</div>
-      </label>
-    </section>
-
     <section class="card">
       <h2>🏪 店家基本資料</h2>
       <p class="hint">這些會出現在落地頁、DM、儀表板、週報信</p>
@@ -196,7 +186,7 @@
           <strong>② Repo 名稱</strong>:放網站的資料夾名,<strong>直接用預設的 appleshop 就好</strong>,不用改。<br><br>
           填完,下方黑框會自動算出你的網站網址。<br>
           <strong>⚠️ 注意:這一步只是「設定網址」,網站還沒上線。</strong><br>
-          &nbsp;&nbsp;產生檔案後,再照 INSTALL 說明把檔案上傳到 GitHub,網站才會正式上線(約 5 分鐘)。
+          &nbsp;&nbsp;產生檔案後,再照 INSTALL.md 把檔案上傳到 GitHub,網站才會正式上線(約 5 分鐘)。
         </div>
       </details>
       <div class="row2">
@@ -233,6 +223,31 @@
           <small>用現成的 Cloudflare Worker,你完全不用設定 Cloudflare。每家店有獨立 namespace,資料不會撞</small>
         </div>
       </label>
+
+      <div class="field" style="margin-top:16px;">
+        <label>📡 真實數據(LINE 好友 / Google 評論 / FB 追蹤數)</label>
+        <label class="toggle">
+          <input type="radio" name="realDataMode" value="off" checked>
+          <div class="label">
+            <strong>① 單純顯示(最簡單,預設)</strong>
+            <small>只顯示點擊活動與日曆,不顯示粉絲數。什麼都不用設定,開箱即用。</small>
+          </div>
+        </label>
+        <label class="toggle">
+          <input type="radio" name="realDataMode" value="manual">
+          <div class="label">
+            <strong>② 手動填數字(推薦)</strong>
+            <small>顯示你的 LINE / Google / FB 數字,自己填、隨時可改(開個網址就更新),還會自動畫趨勢圖。零技術門檻。</small>
+          </div>
+        </label>
+        <label class="toggle">
+          <input type="radio" name="realDataMode" value="api">
+          <div class="label">
+            <strong>③ API 自動串接(進階)</strong>
+            <small>全自動抓最新數字,但需自備 Cloudflare Worker 與各平台 API 金鑰。大多數店家用②就夠了。</small>
+          </div>
+        </label>
+      </div>
     </section>
 
     <button type="submit" class="primary" id="submitBtn">📦 產生我的店家網站包</button>
@@ -261,24 +276,11 @@
   <p class="footer">
     🛠 由 <a href="https://github.com/magicbrian1206-maker/landing" target="_blank">燦坤華榮 AppleShop</a> 開源分享 ·
     所有處理在你的瀏覽器內完成,不會上傳任何資料
-    <br>
-    <span style="opacity:.6">
-      <span id="versionTag">載入中...</span> ·
-      <a href="https://github.com/magicbrian1206-maker/appleshop-starter/blob/main/CHANGELOG.md" target="_blank">更新紀錄</a>
-    </span>
   </p>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script src="generator.js"></script>
-<script>
-  // 顯示目前版本
-  fetch('VERSION').then(r => r.text()).then(v => {
-    document.getElementById('versionTag').textContent = '版本 v' + v.trim();
-  }).catch(() => {
-    document.getElementById('versionTag').textContent = '版本 dev';
-  });
-</script>
 </body>
 </html>

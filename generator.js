@@ -29,18 +29,24 @@ const formData = () => {
     ghRepo:       get('ghRepo')     || 'appleshop',
     enableEmail:  checked('enableEmail'),
     useSharedWorker: checked('useSharedWorker'),
+    realDataMode: get('realDataMode') || 'off',  // off | manual | api
     photoFile:    f.elements['photo']?.files[0] || null,
   };
 };
 
-// 從 GitHub owner+repo 產生 namespace(保證唯一,不會撞 — 因為 GitHub 帳號全網唯一)
-function makeNamespace(storeName, ghOwner, ghRepo) {
-  return (ghOwner + '-' + ghRepo)
+// 從店名產生 namespace (slug-friendly, 至少 3 字元)
+function makeNamespace(storeName, ghOwner) {
+  // 拿純英數+把中文轉拼音風格 fallback
+  let slug = storeName
     .toLowerCase()
-    .replace(/[^a-z0-9-]/g, '-')
-    .replace(/--+/g, '-')
+    .replace(/[^\w\u4e00-\u9fff-]+/g, '-')
     .replace(/^-+|-+$/g, '')
-    .substring(0, 60);
+    .substring(0, 40);
+  // 中文 → 用 owner+repo 當 fallback
+  if (!/[a-z0-9]/.test(slug)) {
+    slug = (ghOwner.toLowerCase() + '-shop').replace(/[^a-z0-9-]/g, '-');
+  }
+  return `${slug}-appleshop`.replace(/--+/g, '-');
 }
 
 // 把電話標準化成 tel: 用的格式
@@ -85,30 +91,6 @@ $('#photoDrop input').addEventListener('change', e => {
   }
 });
 
-// ===== 上傳舊 shop-config.json,自動填表 =====
-$('#configInput').addEventListener('change', async e => {
-  const f = e.target.files[0];
-  if (!f) return;
-  try {
-    const cfg = JSON.parse(await f.text());
-    const form = $('#storeForm');
-    let filled = 0;
-    for (const [k, v] of Object.entries(cfg)) {
-      const el = form.elements[k];
-      if (!el) continue;
-      if (el.type === 'checkbox') { el.checked = !!v; filled++; }
-      else if (typeof v === 'string') { el.value = v; filled++; }
-    }
-    updatePreview();
-    $('#configDrop').classList.add('has-file');
-    $('#configName').innerHTML = `✓ 已載入 <strong>${f.name}</strong> · 自動填了 ${filled} 個欄位<br><small style="color:#c0271a">⚠️ 別忘了重新上傳店面照片(JSON 不含圖片)</small>`;
-    // 滾到表單最上方,讓使用者看到自動填的內容
-    $('#storeForm').scrollIntoView({ behavior: 'smooth', block: 'start' });
-  } catch (err) {
-    $('#configName').innerHTML = `❌ 載入失敗:${err.message}`;
-  }
-});
-
 // ===== 主要產生流程 =====
 async function generate() {
   const d = formData();
@@ -128,7 +110,7 @@ async function generate() {
 
   try {
     // 衍生變數
-    const namespace = makeNamespace(d.storeName, d.ghOwner, d.ghRepo);
+    const namespace = makeNamespace(d.storeName, d.ghOwner);
     const workerHost = SHARED_WORKER_HOST; // v1 一律共用
     const landingUrl = `https://${d.ghOwner}.github.io/${d.ghRepo}/`;
     const dashboardUrl = landingUrl + 'stats.html';
@@ -150,9 +132,6 @@ async function generate() {
       // 副標、品項
       ['Apple 授權經銷夥伴', d.subtitle],
       ['iPhone・Mac・iPad・Apple Watch 展示與諮詢・手機舊換新', d.items],
-      // 漏網的店名變體
-      ['燦坤華榮週報', d.storeName.replace(/\s/g, '') + '週報'],
-      ['燦坤黃', '主色'],
       // 電話
       ['+88675527930', telUri],
       ['07-5527930', d.phone],
@@ -173,6 +152,9 @@ async function generate() {
       ['tsann-counter.magicbrian1206.workers.dev', workerHost],
       // Namespace
       ['tsann-kuen-appleshop', namespace],
+      // 真實數據模式（改 stats.html 頂部那行開關）
+      ["const REAL_DATA_MODE = 'api';   /*__REAL_DATA_MODE__*/",
+       `const REAL_DATA_MODE = '${d.realDataMode}';   /*__REAL_DATA_MODE__*/`],
       // 年份
       ['© 2026', `© ${year}`],
     ];
@@ -228,6 +210,15 @@ async function generate() {
       const reportYml = applyReplacements(await fetchTpl('weekly-report.yml'));
       zip.folder('scripts').file('send-report.js', reportJs);
       zip.folder('.github').folder('workflows').file('weekly-report.yml', reportYml);
+      fileCount += 2;
+    }
+
+    // 2b. 真實數據 API 模式(可選)：附 worker 範本 + 教學
+    if (d.realDataMode === 'api') {
+      const workerTpl = applyReplacements(await fetchTpl('worker-template.js'));
+      const apiDoc = applyReplacements(await fetchTpl('REAL-DATA-API.md'));
+      zip.file('worker-template.js', workerTpl);
+      zip.file('REAL-DATA-API.md', apiDoc);
       fileCount += 2;
     }
 
@@ -337,6 +328,43 @@ function buildInstallMd(d, urls) {
    - 點 \`Run workflow\` → 等 30 秒 → 看信箱
 ` : '';
 
+  // 真實數據模式說明
+  const workerHost = urls.workerHost;
+  const rdManual = `
+
+## 📡 真實數據（手動模式）— 顯示你的 LINE 好友 / Google 評論 / FB 追蹤數
+
+你選了「手動填數字」。儀表板上方會顯示這三個數字，你隨時可以自己更新：
+
+### 更新方法：用手機或電腦開一個網址就好
+
+把下面網址的數字改成你目前的實際數，開一次就更新（開完看到 \`ok\` 或一個數字就成功）：
+
+| 要更新的數據 | 開這個網址（把 \`數字\` 換成實際值）|
+|---|---|
+| LINE 好友數 | \`https://${workerHost}/set/${urls.namespace}/rd-line?v=數字\` |
+| FB 追蹤數 | \`https://${workerHost}/set/${urls.namespace}/rd-fb?v=數字\` |
+| Google 評論則數 | \`https://${workerHost}/set/${urls.namespace}/rd-google?v=數字\` |
+| Google 星等（選填，例 4.8 填 48）| \`https://${workerHost}/set/${urls.namespace}/rd-google-rating?v=48\` |
+
+> 💡 例：LINE 好友有 320 人 → 開 \`https://${workerHost}/set/${urls.namespace}/rd-line?v=320\`
+> 💡 星等要「乘以 10」再填（4.8 → 填 48），系統會自動顯示成 4.8。
+> 💡 每天回來更新一次，系統會自動幫你畫出「趨勢折線圖」（累積幾天後就會出現）。
+> 💡 想更方便可把這幾個網址加到手機書籤，點一下改數字就好。
+`;
+  const rdApi = `
+
+## 📡 真實數據（自動串接模式）— 進階
+
+你選了「API 自動串接」。這需要你自備一個 Cloudflare Worker 與各平台 API 金鑰
+（LINE Messaging API、Google Places API、Facebook Graph API）。
+設定較複雜，請參考包裡的 \`worker-template.js\` 和 \`REAL-DATA-API.md\`。
+（大多數店家用「手動模式」就很夠用了，不必走這條。）
+`;
+  const realDataSection =
+    d.realDataMode === 'manual' ? rdManual :
+    d.realDataMode === 'api'    ? rdApi    : '';
+
   return `# 🍎 ${d.storeName} · 部署指南
 
 > 從這個 zip 到上線只要 5 分鐘 ✨
@@ -380,7 +408,7 @@ ${d.enableEmail ? '- `scripts/send-report.js` + `.github/workflows/weekly-report
 - 開 [${urls.landingUrl}](${urls.landingUrl}) 看落地頁
 - 開 [${urls.dashboardUrl}](${urls.dashboardUrl}) 看儀表板
 - 用手機掃 \`qrcode-final.png\` → 點按鈕 → 數字會 +1 🎉
-${emailSection}
+${emailSection}${realDataSection}
 
 ## 🖨 列印 A4 DM
 
