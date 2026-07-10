@@ -233,6 +233,31 @@
           <small>用現成的 Cloudflare Worker,你完全不用設定 Cloudflare。每家店有獨立 namespace,資料不會撞</small>
         </div>
       </label>
+
+      <div class="field" style="margin-top:16px;">
+        <label>📡 真實數據(LINE 好友 / Google 評論 / FB 追蹤數)</label>
+        <label class="toggle">
+          <input type="radio" name="realDataMode" value="off" checked>
+          <div class="label">
+            <strong>① 單純顯示(最簡單,預設)</strong>
+            <small>只顯示點擊活動與日曆,不顯示粉絲數。什麼都不用設定,開箱即用。</small>
+          </div>
+        </label>
+        <label class="toggle">
+          <input type="radio" name="realDataMode" value="manual">
+          <div class="label">
+            <strong>② 手動填數字(推薦)</strong>
+            <small>顯示你的 LINE / Google / FB 數字,自己填、隨時可改(開個網址就更新),還會自動畫趨勢圖。零技術門檻。</small>
+          </div>
+        </label>
+        <label class="toggle">
+          <input type="radio" name="realDataMode" value="api">
+          <div class="label">
+            <strong>③ API 自動串接(進階)</strong>
+            <small>全自動抓最新數字,但需自備 Cloudflare Worker 與各平台 API 金鑰。大多數店家用②就夠了。</small>
+          </div>
+        </label>
+      </div>
     </section>
 
     <button type="submit" class="primary" id="submitBtn">📦 產生我的店家網站包</button>
