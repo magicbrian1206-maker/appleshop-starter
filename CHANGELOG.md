@@ -1,5 +1,9 @@
 # AppleShop Starter Kit · 更新紀錄
 
+## v1.0.13 — 2026-08-02
+- 更新 Google CTA 連結為可正常開啟的地圖連結 (soD6VfJuc1DfVRWA9)
+
+
 ## v1.0.12 — 2026-08-02
 - 修復 Google 五星評論 CTA 連結 (更新為新 maps 短網址 kktUmWPj3pHySFGUA)
 
