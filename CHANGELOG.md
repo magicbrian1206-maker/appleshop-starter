@@ -1,5 +1,9 @@
 # AppleShop Starter Kit · 更新紀錄
 
+## v1.0.12 — 2026-08-02
+- 修復 Google 五星評論 CTA 連結 (更新為新 maps 短網址 kktUmWPj3pHySFGUA)
+
+
 ## v1.0.11 — 2026-07-09
 - 補推 API 模式範本 worker-template.js + REAL-DATA-API.md
 
