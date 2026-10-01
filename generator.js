@@ -349,7 +349,7 @@ function buildInstallMd(d, urls) {
 
 > 💡 例：LINE 好友有 320 人 → 開 \`https://${workerHost}/set/${urls.namespace}/rd-line?v=320\`
 > 💡 星等要「乘以 10」再填（4.8 → 填 48），系統會自動顯示成 4.8。
-> 💡 每天回來更新一次，系統會自動幫你畫出「趨勢折線圖」（累積幾天後就會出現）。
+> 💡 每天回來更新一次，系統會自動畫出趨勢圖，並算出「累計增加」與每天的「實際加入」（從你第一次填數字那天起算）。
 > 💡 想更方便可把這幾個網址加到手機書籤，點一下改數字就好。
 `;
   const rdApi = `
@@ -373,7 +373,7 @@ function buildInstallMd(d, urls) {
 
 - \`index.html\` — 手機落地頁(QR 掃進來看到的頁面)
 - \`dm.html\` — A4 列印 DM
-- \`stats.html\` — Apple Watch 風格統計儀表板
+- \`stats.html\` — 統計儀表板(點擊次數、每日明細、月曆)
 - \`summary.html\` — 對外說明頁
 - \`store.jpg\` — 店面照片(${d.photoFile ? '已用你上傳的' : '⚠️ **缺檔案!請放一張 16:9 店面照**'})
 - \`qrcode-final.png\` — 800×800 QR Code(已自動指向你的網站)

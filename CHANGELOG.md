@@ -1,5 +1,9 @@
 # AppleShop Starter Kit · 更新紀錄
 
+## v1.0.14 — 2026-10-01
+- stats.html 重新設計（點擊×實際加入、每日明細、月曆）；累計起點 5/16；manual 模式起點修正
+
+
 ## v1.0.13 — 2026-08-02
 - 更新 Google CTA 連結為可正常開啟的地圖連結 (soD6VfJuc1DfVRWA9)
 

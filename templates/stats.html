@@ -9,827 +9,233 @@
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <style>
   :root {
-    --line:   #06C755;  --line-2: #00E37F;
-    --fb:     #1877F2;  --fb-2:   #4DA3FF;
-    --google: #EA4335;  --google-2: #FBBC05;
-    --yellow: #FFD500;
+    --line: #06C755; --fb: #1877F2; --google: #FBBC05; --yellow: #FFD500;
+    --bg: #000; --card: #1c1c1e; --card-2: #2c2c2e; --border: rgba(255,255,255,0.07);
+    --text: #fff; --text-2: #8e8e93; --text-3: #48484a;
+    --up: #30D158; --down: #FF453A;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
-  html, body { background: #000; color: #fff; }
+  html, body { background: var(--bg); color: var(--text); }
   body {
-    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display",
-                 "PingFang TC", "Microsoft JhengHei", sans-serif;
-    min-height: 100vh; min-height: 100dvh;
-    padding: 20px 16px;
-    padding-top: max(20px, env(safe-area-inset-top));
-    padding-bottom: max(20px, env(safe-area-inset-bottom));
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang TC", "Microsoft JhengHei", sans-serif;
     -webkit-font-smoothing: antialiased;
+    padding: max(20px, env(safe-area-inset-top)) 16px max(28px, env(safe-area-inset-bottom));
   }
-  .wrap { max-width: 460px; margin: 0 auto; }
-
-  /* ===== 桌面雙欄佈局（>= 900px） ===== */
-  @media (min-width: 900px) {
-    .wrap { max-width: 1000px; }
-    .main-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 16px;
-      align-items: stretch;     /* 三欄等高(撐到最高那欄,通常是中欄月曆) */
-    }
-    /* 每欄是 flex column,讓裡面的卡片可以 flex:1 撐滿 */
-    .main-grid > div {
-      display: flex;
-      flex-direction: column;
-    }
-    /* header / tabs / meta / 下載按鈕保持全寬 */
-    .full-width { grid-column: 1 / -1; }
-    /* 每一欄的「第一張卡」上方對齊（移除預設 margin-top） */
-    .main-grid > div > *:first-child {
-      margin-top: 0 !important;
-    }
-    /* === 中欄:cal-card 撐滿欄高,內部元件保持自然(slack 由 cal-card 深灰背景吸收) === */
-    .cal-card {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-    }
-    .cal-card .cal-grid {
-      grid-auto-rows: minmax(38px, 46px);
-    }
-    .cal-card .cal-cell {
-      aspect-ratio: auto;
-      min-height: 38px;
-    }
-    /* === 右欄:chart-card 撐滿欄高,3 張趨勢卡 flex:1 均分填滿(避免下方深灰空白) === */
-    .chart-card:has(.rd-trend) {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-    }
-    .chart-card:has(.rd-trend) > .rd-trend {
-      flex: 1;
-      min-height: 0;
-    }
-    /* === 左欄 3 張 stat 小卡保持自然高度,Excel 緊接 meta 下方 === */
-    .stat {
-      flex: 0 0 auto;
-    }
-  }
-  /* ===== 寬螢幕三欄佈局（>= 1280px） ===== */
-  @media (min-width: 1280px) {
-    .wrap { max-width: 1380px; }
-    .main-grid {
-      grid-template-columns: 1fr 1.05fr 1fr;
-      gap: 14px;
-    }
-    .full-width { grid-column: 1 / -1; }
-    /* 三環縮小一點 */
-    .rings-wrap { width: 170px; height: 170px; }
-    .rings-center .total-num { font-size: 30px; }
-    .chart-wrap { height: 180px; }
-    .rd-chart-wrap { height: 60px; }
-    .stat { padding: 12px 14px; }
-    .stat .icon { width: 38px; height: 38px; font-size: 18px; }
-    .stat .text .desc { font-size: 18px; }
-  }
-  /* 手機/平板維持單欄 */
-  @media (max-width: 899px) {
-    .main-grid > * { grid-column: 1; }
-    /* 手機版重新排序:讓三環(主要功能)先出現,真實數據卡移到最底 */
-    .wrap { display: flex; flex-direction: column; }
-    .wrap > header     { order: 0; }
-    .wrap > #tabs      { order: 1; }
-    .wrap > .main-grid { order: 2; }
-    .wrap > #ext-card  { order: 3; margin-top: 14px; margin-bottom: 0; }
-  }
+  .num { font-variant-numeric: tabular-nums; }
+  .wrap { max-width: 1180px; margin: 0 auto; display: flex; flex-direction: column; gap: 22px; }
+  .up { color: var(--up); } .down { color: var(--down); } .flat { color: var(--text-2); }
+  .line { --c: var(--line); } .fb { --c: var(--fb); } .google { --c: var(--google); }
+  .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--c); flex-shrink: 0; }
 
   /* 標題 */
-  header {
-    display: flex; align-items: center; justify-content: space-between;
-    margin-bottom: 14px;
+  header { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+  header h1 { font-size: 28px; font-weight: 800; letter-spacing: -0.5px; }
+  header .sub { font-size: 13px; color: var(--text-2); margin-top: 4px; }
+  header .sub b { color: var(--yellow); font-weight: 600; }
+  .btn {
+    font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap;
+    border: 1px solid var(--border); background: var(--card); color: var(--text);
+    padding: 9px 14px; border-radius: 10px;
   }
-  header .left h1 {
-    font-size: 26px; font-weight: 800; letter-spacing: -0.5px; line-height: 1.1;
-  }
-  header .left .date {
-    font-size: 12px; color: #ff453a; font-weight: 600; margin-top: 2px; letter-spacing: 0.5px;
-  }
-  header .avatar {
-    width: 38px; height: 38px;
-    background: linear-gradient(135deg, #FFD500, #FFB800);
-    border-radius: 50%;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 17px; color: #000; font-weight: 800;
-  }
+  .btn:active { transform: scale(0.97); }
+  .btn.primary { background: var(--yellow); color: #000; border-color: transparent; }
+  .btn:disabled { opacity: 0.5; }
 
-  /* 時間區間切換 Tab */
-  .tabs {
-    display: flex;
-    gap: 6px;
-    overflow-x: auto;
-    margin-bottom: 12px;
-    padding-bottom: 4px;
-    -webkit-overflow-scrolling: touch;
-    scrollbar-width: none;
-  }
+  /* 區塊 */
+  .section-title { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; margin-bottom: 10px; }
+  .section-title h2 { font-size: 16px; font-weight: 700; }
+  .section-title .hint { font-size: 12px; color: var(--text-2); text-align: right; }
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 18px; }
+
+  /* ① 真實數據 */
+  .kpi-grid { display: grid; grid-template-columns: 1fr; gap: 12px; }
+  @media (min-width: 760px) { .kpi-grid { grid-template-columns: repeat(3, 1fr); } }
+  .kpi { position: relative; overflow: hidden; display: flex; flex-direction: column; gap: 12px; }
+  .kpi::before { content: ""; position: absolute; inset: 0 0 auto 0; height: 3px; background: var(--c); }
+  .kpi-head { display: flex; align-items: center; justify-content: space-between; font-size: 12px; color: var(--text-2); }
+  .kpi-head .nm { display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; color: var(--text); }
+  .kpi-cur { font-size: 36px; font-weight: 800; line-height: 1; letter-spacing: -0.5px; }
+  .kpi-cur small { font-size: 15px; font-weight: 600; color: var(--text-2); margin-left: 4px; }
+  .chips { display: flex; gap: 6px; flex-wrap: wrap; }
+  .chip { font-size: 12px; font-weight: 600; padding: 4px 8px; border-radius: 6px; background: var(--card-2); }
+  .chip .lb { color: var(--text-2); font-weight: 500; margin-right: 4px; }
+  .since { display: flex; align-items: baseline; justify-content: space-between; gap: 8px;
+           padding: 10px 12px; border-radius: 10px; background: color-mix(in srgb, var(--c) 12%, transparent); }
+  .since .lb { font-size: 12px; color: var(--text-2); }
+  .since .v { font-size: 22px; font-weight: 800; }
+  .since .note { font-size: 11px; color: var(--text-2); margin-top: 2px; }
+  .spark { position: relative; height: 54px; }
+  .spark-empty { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 12px; color: var(--text-3); }
+
+  /* ② 點擊 × 實際加入 */
+  .tabs { display: flex; gap: 2px; padding: 3px; border-radius: 10px; background: var(--card-2);
+          overflow-x: auto; scrollbar-width: none; margin-bottom: 18px; }
   .tabs::-webkit-scrollbar { display: none; }
-  .tab {
-    flex-shrink: 0;
-    background: #1c1c1e;
-    color: #8e8e93;
-    border: 1px solid rgba(255,255,255,0.06);
-    padding: 8px 14px;
-    border-radius: 999px;
-    font-size: 13px;
-    font-weight: 600;
-    cursor: pointer;
-    font-family: inherit;
-    transition: all 0.15s;
-    white-space: nowrap;
-  }
-  .tab:active { transform: scale(0.95); }
-  .tab.active {
-    background: linear-gradient(135deg, var(--yellow), #FFB800);
-    color: #000;
-    border-color: transparent;
-    box-shadow: 0 4px 14px rgba(255,213,0,0.3);
-  }
+  .tab { flex: 1 0 auto; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap;
+         border: 0; background: transparent; color: var(--text-2); padding: 7px 12px; border-radius: 8px; }
+  .tab.active { background: var(--yellow); color: #000; }
+  .cmp-grid { display: grid; grid-template-columns: 1fr; gap: 10px; }
+  @media (min-width: 760px) { .cmp-grid { grid-template-columns: repeat(4, 1fr); } }
+  .cmp { background: var(--card-2); border-radius: 12px; padding: 14px; border-top: 3px solid var(--c); }
+  .cmp.total { --c: var(--yellow); }
+  .cmp-nm { display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; margin-bottom: 12px; }
+  .cmp-row { display: flex; align-items: baseline; justify-content: space-between; padding: 4px 0; }
+  .cmp-row .lb { font-size: 12px; color: var(--text-2); }
+  .cmp-row .v { font-size: 22px; font-weight: 800; }
+  .cmp-row .v small { font-size: 12px; font-weight: 500; color: var(--text-2); margin-left: 2px; }
+  .cmp-row.conv .v { font-size: 14px; font-weight: 600; color: var(--text-2); }
+  .bar { height: 6px; border-radius: 3px; background: rgba(255,255,255,0.06); overflow: hidden; margin: 6px 0 2px; }
+  .bar > i { display: block; height: 100%; width: 0; background: var(--c); border-radius: 3px; transition: width 0.6s ease; }
+  .goal { font-size: 11px; color: var(--text-2); }
+  .cmp-foot { font-size: 11px; color: var(--text-2); margin-top: 12px; line-height: 1.5; }
+  .loading { opacity: 0.5; transition: opacity 0.2s; }
 
-  /* 三環卡片 */
-  .rings-card {
-    background: linear-gradient(180deg, #1c1c1e 0%, #0a0a0a 100%);
-    border-radius: 22px;
-    padding: 14px 16px 12px;
-    margin-bottom: 10px;
-    border: 1px solid rgba(255,255,255,0.06);
+  /* ③ 每日明細 + 月曆 */
+  .two-col { display: grid; grid-template-columns: 1fr; gap: 12px; }
+  @media (min-width: 900px) {
+    /* 兩欄等寬、等高：卡片撐滿欄高，月曆格子平均分配多出的高度 */
+    .two-col { grid-template-columns: 1fr 1fr; align-items: stretch; }
+    .two-col > div { display: flex; flex-direction: column; }
+    .two-col > div > .card { flex: 1; }
+    .cal-card { display: flex; flex-direction: column; }
+    .cal-card .cal-grid { flex: 1; grid-auto-rows: minmax(38px, 1fr); }
+    .cal-card .cal-cell { height: auto; }
   }
-  .period-label {
-    text-align: center;
-    font-size: 11px;
-    color: #8e8e93;
-    letter-spacing: 2px;
-    text-transform: uppercase;
-    margin-bottom: 8px;
-  }
-  .period-label .name { color: #FFD500; font-weight: 700; }
-  .rings-wrap {
-    position: relative;
-    width: 190px; height: 190px;
-    margin: 0 auto 8px;
-  }
-  .rings-wrap svg { width: 100%; height: 100%; transform: rotate(-90deg); }
-  .ring-bg { fill: none; stroke-linecap: round; }
-  .ring-fg {
-    fill: none;
-    stroke-linecap: round;
-    transition: stroke-dashoffset 0.9s cubic-bezier(0.25, 1, 0.5, 1);
-    filter: drop-shadow(0 0 6px currentColor);
-  }
-  .rings-center {
-    position: absolute; inset: 0;
-    display: flex; flex-direction: column;
-    align-items: center; justify-content: center;
-    pointer-events: none;
-  }
-  .rings-center .total-num {
-    font-size: 40px; font-weight: 800; line-height: 1;
-    font-feature-settings: "tnum"; color: #fff;
-  }
-  .rings-center .total-label {
-    font-size: 10px; color: #8e8e93; margin-top: 4px;
-    letter-spacing: 1.5px; text-transform: uppercase;
-  }
+  .tbl-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th, td { padding: 8px 6px; text-align: right; white-space: nowrap; }
+  th:first-child, td:first-child { text-align: left; }
+  thead th { font-size: 12px; font-weight: 600; color: var(--text-2); border-bottom: 1px solid var(--border); }
+  thead th .dot { margin-right: 4px; vertical-align: 1px; }
+  thead tr.sub th { font-size: 11px; font-weight: 500; padding-top: 0; }
+  tbody tr + tr td { border-top: 1px solid var(--border); }
+  tbody td .wk { color: var(--text-2); margin-left: 4px; font-size: 12px; }
+  tbody tr.today td:first-child { color: var(--yellow); font-weight: 700; }
+  tfoot td { font-weight: 700; border-top: 1px solid rgba(255,255,255,0.2); padding-top: 10px; }
+  td.clk { color: var(--text); font-weight: 600; }
+  td.act { font-weight: 600; }
+  td.gap-l { padding-left: 14px; }
 
-  .legend {
-    display: grid; grid-template-columns: 1fr 1fr 1fr;
-    gap: 8px; text-align: center;
-  }
-  .legend .item .dot {
-    width: 10px; height: 10px; border-radius: 50%;
-    margin: 0 auto 4px;
-  }
-  .legend .line   .dot { background: var(--line); box-shadow: 0 0 8px var(--line); }
-  .legend .fb     .dot { background: var(--fb); box-shadow: 0 0 8px var(--fb); }
-  .legend .google .dot { background: var(--google-2); box-shadow: 0 0 8px var(--google-2); }
-  .legend .item .name { font-size: 11px; color: #8e8e93; letter-spacing: 0.5px; }
-  .legend .item .v {
-    font-size: 14px; font-weight: 700; margin-top: 1px;
-    font-feature-settings: "tnum";
-  }
-
-  /* 個別卡片 */
-  .stat {
-    background: #1c1c1e;
-    border-radius: 16px;
-    padding: 14px 16px;
-    margin-bottom: 10px;
-    display: flex; align-items: center; gap: 14px;
-    border: 1px solid rgba(255,255,255,0.05);
-  }
-  .stat .icon {
-    width: 44px; height: 44px;
-    border-radius: 12px;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 22px; flex-shrink: 0; color: #fff;
-  }
-  .stat.line   .icon { background: var(--line); box-shadow: 0 0 14px rgba(6,199,85,0.4); }
-  .stat.fb     .icon { background: var(--fb);   box-shadow: 0 0 14px rgba(24,119,242,0.4); }
-  .stat.google .icon { background: linear-gradient(135deg, #EA4335 0%, #FBBC05 100%);
-                       box-shadow: 0 0 14px rgba(234,67,53,0.4); }
-  .stat .text { flex: 1; min-width: 0; }
-  .stat .text .name {
-    font-size: 13px; color: #8e8e93;
-    letter-spacing: 0.5px; margin-bottom: 2px;
-  }
-  .stat .text .desc {
-    font-size: 22px; font-weight: 800; line-height: 1.1;
-    font-feature-settings: "tnum";
-  }
-  .stat .text .desc .unit {
-    font-size: 12px; color: #8e8e93; font-weight: 500; margin-left: 4px;
-  }
-  .stat .progress { text-align: right; flex-shrink: 0; }
-  .stat .progress .pct {
-    font-size: 18px; font-weight: 700; font-feature-settings: "tnum";
-  }
-  .stat.line   .progress .pct { color: var(--line-2); }
-  .stat.fb     .progress .pct { color: var(--fb-2); }
-  .stat.google .progress .pct { color: var(--google-2); }
-  .stat .progress .of { font-size: 10px; color: #8e8e93; }
-
-  /* 工具列 */
-  .toolbar { display: flex; gap: 8px; margin-top: 14px; }
-  .tbtn {
-    flex: 1;
-    background: #1c1c1e;
-    color: #fff;
-    border: 1px solid rgba(255,255,255,0.08);
-    padding: 12px;
-    border-radius: 12px;
-    font-size: 13px; font-weight: 600;
-    cursor: pointer; font-family: inherit;
-    transition: all 0.15s;
-  }
-  .tbtn:active { transform: scale(0.97); }
-  .tbtn.primary {
-    background: linear-gradient(135deg, #FFD500, #FFB800);
-    color: #000; border-color: transparent;
-  }
-
-  .meta { text-align: center; color: #6c6c70; font-size: 11px; margin-top: 12px; }
-
-  /* ===== 月曆 ===== */
-  .cal-card {
-    background: #1c1c1e;
-    border-radius: 18px;
-    padding: 12px;
-    margin-top: 14px;
-    border: 1px solid rgba(255,255,255,0.06);
-  }
-  .cal-head {
-    display: flex; align-items: center; justify-content: space-between;
-    margin-bottom: 12px;
-  }
-  .cal-head h3 {
-    font-size: 16px; font-weight: 700; letter-spacing: 0.5px;
-  }
-  .cal-nav {
-    display: flex; gap: 4px;
-  }
-  .cal-nav button {
-    width: 32px; height: 32px;
-    background: #2c2c2e;
-    color: #fff;
-    border: none;
-    border-radius: 8px;
-    font-size: 16px;
-    cursor: pointer;
-    font-family: inherit;
-  }
-  .cal-nav button:active { transform: scale(0.92); }
+  .cal-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+  .cal-head h3 { font-size: 16px; font-weight: 700; }
+  .cal-nav { display: flex; gap: 4px; }
+  .cal-nav button { min-width: 32px; height: 32px; padding: 0 8px; font: inherit; font-size: 13px; cursor: pointer;
+                    border: 0; border-radius: 8px; background: var(--card-2); color: var(--text); }
   .cal-nav button:disabled { opacity: 0.3; cursor: not-allowed; }
-
-  .cal-weekdays {
-    display: grid; grid-template-columns: repeat(7, 1fr);
-    text-align: center; font-size: 11px;
-    color: #8e8e93; margin-bottom: 6px;
-  }
-  .cal-weekdays div { padding: 4px 0; }
-  .cal-weekdays div.weekend { color: #ff453a; }
-
-  .cal-grid {
-    display: grid; grid-template-columns: repeat(7, 1fr);
-    gap: 4px;
-  }
-  .cal-cell {
-    aspect-ratio: 1.6;
-    display: flex; flex-direction: column;
-    align-items: center; justify-content: center;
-    background: transparent;
-    border: none;
-    border-radius: 10px;
-    color: #fff;
-    font-size: 14px;
-    font-weight: 600;
-    cursor: pointer;
-    font-family: inherit;
-    position: relative;
-    transition: background 0.15s;
-  }
-  .cal-cell:active { transform: scale(0.92); }
-  .cal-cell.empty { cursor: default; pointer-events: none; }
-  .cal-cell.future { color: #3a3a3c; cursor: not-allowed; pointer-events: none; }
-  .cal-cell.today { color: #FFD500; }
-  .cal-cell:not(.empty):not(.future):hover { background: rgba(255,255,255,0.08); }
-  .cal-cell.selected {
-    background: linear-gradient(135deg, #FFD500, #FFB800);
-    color: #000;
-  }
-  .cal-cell.selected.today { color: #000; }
-  .cal-cell .activity {
-    position: absolute;
-    bottom: 4px;
-    width: 4px; height: 4px;
-    border-radius: 50%;
-    background: #FFD500;
-    box-shadow: 0 0 4px #FFD500;
-  }
+  .cal-weekdays { display: grid; grid-template-columns: repeat(7, 1fr); text-align: center; font-size: 11px; color: var(--text-2); margin-bottom: 4px; }
+  .cal-weekdays .weekend { color: var(--down); }
+  .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; }
+  .cal-cell { height: 38px; position: relative; font: inherit; font-size: 14px; font-weight: 500; cursor: pointer;
+              border: 0; border-radius: 8px; background: transparent; color: var(--text); }
+  .cal-cell.empty { pointer-events: none; }
+  .cal-cell.future { color: var(--text-3); pointer-events: none; }
+  .cal-cell.today { color: var(--yellow); font-weight: 700; }
+  .cal-cell:not(.empty):not(.future):hover { background: var(--card-2); }
+  .cal-cell.selected { background: var(--yellow); color: #000; font-weight: 700; }
+  .cal-cell .activity { position: absolute; left: 50%; bottom: 4px; transform: translateX(-50%);
+                        width: 4px; height: 4px; border-radius: 50%; background: var(--yellow); }
   .cal-cell.selected .activity { display: none; }
+  .cal-detail { margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--border); }
+  .day-title { font-size: 15px; font-weight: 700; margin-bottom: 8px; }
+  .day-title .wk { color: var(--text-2); font-weight: 500; margin-left: 4px; font-size: 13px; }
+  .day-title .badge { font-size: 11px; background: var(--yellow); color: #000; padding: 2px 6px; border-radius: 5px; margin-left: 6px; vertical-align: 2px; }
+  .day-tbl td { padding: 7px 4px; }
+  .day-tbl td.nm { color: var(--text-2); }
+  .day-tbl td.nm .dot { margin-right: 8px; vertical-align: 1px; }
 
-  /* 日明細 */
-  .cal-detail {
-    margin-top: 10px;
-    padding-top: 10px;
-    border-top: 1px solid rgba(255,255,255,0.08);
-  }
-  .cal-detail .day-title {
-    font-size: 18px; font-weight: 700;
-    margin-bottom: 10px;
-    color: #fff;
-  }
-  .cal-detail .day-title .badge {
-    display: inline-block;
-    background: rgba(255,213,0,0.2);
-    color: #FFD500;
-    padding: 2px 8px;
-    border-radius: 6px;
-    font-size: 12px;
-    margin-left: 6px;
-    vertical-align: middle;
-  }
-  .cal-detail .day-rows {
-    display: flex; flex-direction: column; gap: 6px;
-  }
-  .cal-detail .day-row {
-    display: flex; align-items: center; gap: 12px;
-    padding: 11px 12px;
-    background: #2c2c2e;
-    border-radius: 10px;
-    border-left: 3px solid var(--gray-500);
-  }
-  .cal-detail .day-row.line   { border-left-color: var(--line); }
-  .cal-detail .day-row.fb     { border-left-color: var(--fb); }
-  .cal-detail .day-row.google { border-left-color: var(--google); }
-  .cal-detail .day-row .ic { font-size: 18px; width: 24px; text-align: center; }
-  .cal-detail .day-row .nm { flex: 1; font-size: 13px; color: #c7c7cc; }
-  .cal-detail .day-row .vl {
-    font-size: 17px; font-weight: 800;
-    font-feature-settings: "tnum";
-  }
-  .cal-detail .day-row.line   .vl { color: var(--line-2); }
-  .cal-detail .day-row.fb     .vl { color: var(--fb-2); }
-  .cal-detail .day-row.google .vl { color: var(--google-2); }
-  .cal-detail .day-row .vl .u { font-size: 11px; color: #8e8e93; font-weight: 500; margin-left: 2px; }
-  .cal-detail .day-total {
-    margin-top: 10px;
-    padding: 10px 12px;
-    background: linear-gradient(135deg, rgba(255,213,0,0.15), rgba(255,184,0,0.05));
-    border-radius: 10px;
-    border: 1px solid rgba(255,213,0,0.2);
-    display: flex; justify-content: space-between; align-items: center;
-  }
-  .cal-detail .day-total .lb { font-size: 13px; color: #FFD500; font-weight: 600; }
-  .cal-detail .day-total .vl { font-size: 22px; font-weight: 800; color: #fff; font-feature-settings: "tnum"; }
+  footer { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; }
+  footer .meta { font-size: 12px; color: var(--text-2); }
+  footer .actions { display: flex; gap: 8px; flex-wrap: wrap; }
 
-  /* ===== 圖表卡片 ===== */
-  .chart-card {
-    background: #1c1c1e;
-    border-radius: 18px;
-    padding: 16px;
-    margin-top: 14px;
-    border: 1px solid rgba(255,255,255,0.06);
-  }
-  .chart-card h3 {
-    font-size: 16px; font-weight: 700;
-    margin-bottom: 12px;
-    display: flex; align-items: center; gap: 8px;
-  }
-  .chart-card h3 .icon { font-size: 18px; }
-  .chart-wrap { position: relative; height: 220px; }
-
-  /* ===== 真實數據趨勢卡 (rd-trend) ===== */
-  .rd-trend {
-    margin-top: 10px;
-    padding: 10px 12px;
-    background: #1c1c1e;
-    border-radius: 12px;
-    border-left: 3px solid;
-    min-height: 100px;
-    display: flex;
-    flex-direction: column;
-  }
-  .rd-trend:first-of-type { margin-top: 0; }
-  .rd-trend.line   { border-left-color: #06C755; }
-  .rd-trend.fb     { border-left-color: #1877F2; }
-  .rd-trend.google { border-left-color: #FBBC05; }
-  .rd-head {
-    display: flex; align-items: baseline; gap: 8px;
-    margin-bottom: 4px;
-  }
-  .rd-icn { font-size: 16px; }
-  .rd-name { font-size: 12px; color: #8e8e93; flex: 1; letter-spacing: 0.5px; }
-  .rd-cur { font-size: 22px; font-weight: 800; color: #fff; font-variant-numeric: tabular-nums; }
-  .rd-deltas {
-    font-size: 11px; font-weight: 600;
-    margin-bottom: 8px;
-    display: flex; gap: 10px;
-  }
-  .rd-delta-piece .label { color: #6e6e73; margin-right: 4px; font-weight: 500; }
-  .rd-delta-piece.up   .val { color: #06C755; }
-  .rd-delta-piece.down .val { color: #EA4335; }
-  .rd-delta-piece.flat .val { color: #8e8e93; }
-  .rd-chart-wrap { position: relative; height: 70px; flex: 1; min-height: 60px; }
-  .rd-chart-empty {
-    position: absolute; inset: 0;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 11px; color: #5a5a5e; letter-spacing: 0.5px;
-    pointer-events: none;
-  }
-
-  /* ===== Excel 下載按鈕 ===== */
-  .download-btn {
-    width: 100%;
-    background: linear-gradient(135deg, #1d6f42, #14532d);
-    color: #fff;
-    border: none;
-    padding: 14px;
-    border-radius: 12px;
-    font-size: 15px;
-    font-weight: 700;
-    cursor: pointer;
-    font-family: inherit;
-    margin-top: 14px;
-    display: flex; align-items: center; justify-content: center; gap: 8px;
-    transition: all 0.15s;
-  }
-  .download-btn:active { transform: scale(0.97); }
-  .download-btn:hover { filter: brightness(1.1); }
-
-  @keyframes bump {
-    0% { transform: scale(1); }
-    50% { transform: scale(1.18); color: #FFD500; }
-    100% { transform: scale(1); }
-  }
-  .bump { animation: bump 0.4s ease; }
-  .loading { opacity: 0.5; }
-
-  /* ===== 真實數據卡 (LINE 好友 / Google 評論 / FB 粉絲) ===== */
-  .ext-card {
-    background: #1c1c1e;
-    border: 1px solid #2a2a2c;
-    border-radius: 18px;
-    padding: 8px 16px 10px;
-    margin: 0 0 10px;
-  }
-  .ext-head {
-    display: flex; align-items: center; justify-content: space-between;
-    margin-bottom: 6px;
-  }
-  .ext-head h3 {
-    font-size: 15px; font-weight: 600;
-    display: flex; align-items: center; gap: 6px;
-  }
-  .ext-head h3 .icon { font-size: 16px; }
-  .ext-meta-r { font-size: 11px; color: #8e8e93; }
-  .ext-grid {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 10px;
-  }
-  @media (min-width: 700px) {
-    .ext-grid { grid-template-columns: 1fr 1fr 1fr; }
-  }
-  .ext-cell {
-    background: #000;
-    border-radius: 14px;
-    padding: 8px 12px 6px;
-    border: 1px solid #2a2a2c;
-    position: relative;
-    min-height: 68px;
-  }
-  .ext-cell.line   { border-left: 3px solid var(--line); }
-  .ext-cell.google { border-left: 3px solid var(--google-2); }
-  .ext-cell.fb     { border-left: 3px solid var(--fb); }
-  .ext-icn { font-size: 18px; margin-bottom: 2px; }
-  .ext-label {
-    font-size: 11px; color: #8e8e93;
-    letter-spacing: 0.5px; text-transform: uppercase;
-  }
-  .ext-num {
-    font-size: 24px; font-weight: 700;
-    font-variant-numeric: tabular-nums;
-    margin-top: 0; line-height: 1.1;
-    color: #fff;
-  }
-  .ext-sub {
-    display: flex; flex-wrap: wrap; gap: 8px;
-    font-size: 11px; margin-top: 2px;
-  }
-  .ext-delta { font-weight: 700; }
-  .ext-delta.up   { color: #30D158; }
-  .ext-delta.down { color: #FF453A; }
-  .ext-delta.flat { color: #8e8e93; }
-  .ext-asof { color: #8e8e93; }
-  .ext-rating { color: var(--yellow); font-weight: 600; }
-  .ext-fb-form {
-    display: flex; gap: 6px; margin-top: 10px;
-  }
-  .ext-fb-form input {
-    flex: 1; min-width: 0;
-    background: #1c1c1e;
-    border: 1px solid #3a3a3c;
-    color: #fff;
-    padding: 8px 10px; border-radius: 10px;
-    font-size: 14px; font-variant-numeric: tabular-nums;
-    outline: none;
-    -webkit-appearance: none; appearance: none;
-    font-family: inherit;
-  }
-  .ext-fb-form input:focus { border-color: var(--fb); }
-  .ext-fb-form button {
-    background: var(--fb); color: #fff;
-    border: 0; border-radius: 10px;
-    padding: 8px 14px; font-size: 12px;
-    font-weight: 700; cursor: pointer;
-    white-space: nowrap;
-    -webkit-appearance: none; appearance: none;
-    font-family: inherit;
-    transition: background 0.2s;
-  }
-  .ext-fb-form button:active { opacity: 0.75; }
-  .ext-fb-form button:disabled { opacity: 0.5; cursor: not-allowed; }
-  .ext-fb-form button.saved { background: var(--line); }
-  .ext-fb-help {
-    font-size: 10px; color: #6c6c70;
-    margin-top: 6px; line-height: 1.4;
-  }
-  .ext-fb-help a { color: #8e8e93; text-decoration: underline; }
-  .ext-error {
-    color: #FF453A; font-size: 10px;
-    margin-top: 4px;
-  }
+  /* 純點擊模式：隱藏所有「實際加入」 */
+  .mode-off #ext-card, .mode-off .actual { display: none !important; }
 </style>
 </head>
 <body>
 <div class="wrap">
 
-  <header class="full-width">
-    <div class="left">
+  <header>
+    <div>
       <h1>活動紀錄</h1>
-      <div class="date" id="today-date">— —</div>
+      <div class="sub">燦坤華榮 AppleShop　·　<b id="today-date">— —</b></div>
     </div>
-    <div class="avatar">🍎</div>
+    <button class="btn primary" id="btn-refresh" onclick="loadAll(true)">重新整理</button>
   </header>
 
-  <!-- ===== 真實數據卡 (LINE 好友 / Google 評論 / FB 粉絲) ===== -->
-  <div class="ext-card full-width" id="ext-card">
-    <div class="ext-head">
-      <h3><span class="icon">📡</span>真實數據</h3>
-      <div class="ext-meta-r" id="ext-meta-r">每 5 分鐘自動更新</div>
+  <!-- ① 真實數據 -->
+  <section id="ext-card">
+    <div class="section-title"><h2>真實數據</h2><span class="hint" id="ext-meta-r">每 5 分鐘自動更新</span></div>
+    <div class="kpi-grid" id="kpi-grid"></div>
+  </section>
+
+  <!-- ② 點擊 × 實際加入 -->
+  <section>
+    <div class="section-title"><h2>點擊 × 實際加入</h2><span class="hint">點擊＝落地頁按鈕次數　·　實際加入＝平台真實數字增加</span></div>
+    <div class="card" id="cmp-card">
+      <div class="tabs" id="tabs"></div>
+      <div class="cmp-grid" id="cmp-grid"></div>
+      <div class="cmp-foot actual" id="cmp-foot"></div>
     </div>
-    <div class="ext-grid">
-      <!-- LINE -->
-      <div class="ext-cell line">
-        <div class="ext-icn">💬</div>
-        <div class="ext-label">LINE 好友</div>
-        <div class="ext-num" id="ext-line-num">— —</div>
-        <div class="ext-sub">
-          <span class="ext-delta flat" id="ext-line-delta">本週 —</span>
-          <span class="ext-asof" id="ext-line-asof">—</span>
-        </div>
-      </div>
-      <!-- Google -->
-      <div class="ext-cell google">
-        <div class="ext-icn">⭐</div>
-        <div class="ext-label">Google 評論</div>
-        <div class="ext-num" id="ext-google-num">— —</div>
-        <div class="ext-sub">
-          <span class="ext-rating" id="ext-google-rating">⭐ —</span>
-          <span class="ext-delta flat" id="ext-google-delta">本週 —</span>
-        </div>
-      </div>
-      <!-- FB -->
-      <div class="ext-cell fb">
-        <div class="ext-icn">👍</div>
-        <div class="ext-label">FB 追蹤數</div>
-        <div class="ext-num" id="ext-fb-num">— —</div>
-        <div class="ext-sub">
-          <span class="ext-delta flat" id="ext-fb-delta">本週 —</span>
-          <span class="ext-asof" id="ext-fb-asof">—</span>
-        </div>
-      </div>
-    </div>
-  </div>
+  </section>
 
-  <!-- 時間切換 -->
-  <div class="tabs full-width" id="tabs"></div>
-
-  <!-- 雙欄主內容 -->
-  <div class="main-grid">
-
-    <!-- ============ 左欄：核心數據 ============ -->
+  <!-- ③ 每日明細 + 月曆 -->
+  <section class="two-col">
     <div>
-
-  <!-- 三環卡片 -->
-  <div class="rings-card" id="rings-card">
-    <div class="period-label">
-      期間：<span class="name" id="period-name">今日</span>　·　目標 <span id="period-goal">10</span>
-    </div>
-    <div class="rings-wrap">
-      <svg viewBox="0 0 240 240">
-        <circle class="ring-bg" cx="120" cy="120" r="105"
-          stroke="rgba(6,199,85,0.18)" stroke-width="20"/>
-        <circle class="ring-fg" id="ring-line"
-          cx="120" cy="120" r="105"
-          stroke="#06C755" stroke-width="20"
-          stroke-dasharray="659.7" stroke-dashoffset="659.7"
-          style="color: #06C755"/>
-
-        <circle class="ring-bg" cx="120" cy="120" r="78"
-          stroke="rgba(24,119,242,0.18)" stroke-width="20"/>
-        <circle class="ring-fg" id="ring-fb"
-          cx="120" cy="120" r="78"
-          stroke="#1877F2" stroke-width="20"
-          stroke-dasharray="490.1" stroke-dashoffset="490.1"
-          style="color: #1877F2"/>
-
-        <defs>
-          <linearGradient id="gg" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stop-color="#EA4335"/>
-            <stop offset="100%" stop-color="#FBBC05"/>
-          </linearGradient>
-        </defs>
-        <circle class="ring-bg" cx="120" cy="120" r="51"
-          stroke="rgba(234,67,53,0.18)" stroke-width="20"/>
-        <circle class="ring-fg" id="ring-google"
-          cx="120" cy="120" r="51"
-          stroke="url(#gg)" stroke-width="20"
-          stroke-dasharray="320.4" stroke-dashoffset="320.4"
-          style="color: #EA4335"/>
-      </svg>
-
-      <div class="rings-center">
-        <div class="total-num" id="total">0</div>
-        <div class="total-label">TOTAL</div>
+      <div class="section-title"><h2>每日明細</h2><span class="hint">近 14 天</span></div>
+      <div class="card tbl-wrap">
+        <table class="num">
+          <thead>
+            <tr>
+              <th rowspan="2">日期</th>
+              <th colspan="2" class="gap-l"><span class="dot line"></span>LINE</th>
+              <th colspan="2" class="gap-l"><span class="dot fb"></span>FB</th>
+              <th colspan="2" class="gap-l"><span class="dot google"></span>Google</th>
+            </tr>
+            <tr class="sub">
+              <th class="gap-l">點擊</th><th class="actual">加入</th>
+              <th class="gap-l">點擊</th><th class="actual">加入</th>
+              <th class="gap-l">點擊</th><th class="actual">評論</th>
+            </tr>
+          </thead>
+          <tbody id="daily-body"><tr><td colspan="7" class="flat">載入中…</td></tr></tbody>
+          <tfoot id="daily-foot"></tfoot>
+        </table>
       </div>
     </div>
 
-    <div class="legend">
-      <div class="item line"><div class="dot"></div><div class="name">LINE</div><div class="v" id="leg-line">0</div></div>
-      <div class="item fb"><div class="dot"></div><div class="name">FB</div><div class="v" id="leg-fb">0</div></div>
-      <div class="item google"><div class="dot"></div><div class="name">GOOGLE</div><div class="v" id="leg-google">0</div></div>
-    </div>
-  </div>
-
-  <div class="stat line">
-    <div class="icon">💬</div>
-    <div class="text">
-      <div class="name">點選 LINE 好友</div>
-      <div class="desc"><span id="d-line">0</span><span class="unit">次</span></div>
-    </div>
-    <div class="progress"><div class="pct" id="p-line">0%</div><div class="of" id="g-line">目標 10</div></div>
-  </div>
-
-  <div class="stat fb">
-    <div class="icon">👍</div>
-    <div class="text">
-      <div class="name">點進 FB 粉絲團</div>
-      <div class="desc"><span id="d-fb">0</span><span class="unit">次</span></div>
-    </div>
-    <div class="progress"><div class="pct" id="p-fb">0%</div><div class="of" id="g-fb">目標 10</div></div>
-  </div>
-
-  <div class="stat google">
-    <div class="icon">⭐</div>
-    <div class="text">
-      <div class="name">點進 Google 評論</div>
-      <div class="desc"><span id="d-google">0</span><span class="unit">次</span></div>
-    </div>
-    <div class="progress"><div class="pct" id="p-google">0%</div><div class="of" id="g-google">目標 10</div></div>
-  </div>
-
-  <div class="toolbar">
-    <button class="tbtn primary" onclick="loadAll(true)">🔄 重新整理</button>
-    <button class="tbtn" onclick="window.open('https://magicbrian1206-maker.github.io/landing/','_blank')">🔗 落地頁</button>
-  </div>
-
-  <div class="meta" id="meta">資料載入中...</div>
-
-  <!-- ===== Excel 下載(緊接 meta 下方,無多餘空白) ===== -->
-  <button class="download-btn" onclick="exportExcel()">
-    <span>📊</span><span>下載完整紀錄 Excel</span>
-  </button>
-
-    </div>  <!-- 左欄結束 -->
-
-    <!-- ============ 中欄：月曆 + 折線圖 ============ -->
     <div>
-
-  <!-- ===== 月曆 ===== -->
-  <div class="cal-card">
-    <div class="cal-head">
-      <h3 id="cal-title">— —</h3>
-      <div class="cal-nav">
-        <button id="cal-prev" aria-label="上個月">‹</button>
-        <button id="cal-today" aria-label="今天" style="width:auto; padding:0 10px; font-size:12px;">今天</button>
-        <button id="cal-next" aria-label="下個月">›</button>
-      </div>
-    </div>
-
-    <div class="cal-weekdays">
-      <div class="weekend">日</div><div>一</div><div>二</div><div>三</div><div>四</div><div>五</div><div class="weekend">六</div>
-    </div>
-    <div class="cal-grid" id="cal-grid"></div>
-
-    <div class="cal-detail" id="cal-detail">
-      <div class="day-title" id="day-title">選擇日期查看明細</div>
-      <div class="day-rows">
-        <div class="day-row line">
-          <div class="ic">💬</div>
-          <div class="nm">點選 LINE 好友</div>
-          <div class="vl"><span id="dc-line">—</span><span class="u">次</span></div>
+      <div class="section-title"><h2>月曆</h2><span class="hint">點日期看當天</span></div>
+      <div class="card cal-card">
+        <div class="cal-head">
+          <h3 id="cal-title">— —</h3>
+          <div class="cal-nav">
+            <button id="cal-prev" aria-label="上個月">‹</button>
+            <button id="cal-today">今天</button>
+            <button id="cal-next" aria-label="下個月">›</button>
+          </div>
         </div>
-        <div class="day-row fb">
-          <div class="ic">👍</div>
-          <div class="nm">點進 FB 粉絲團</div>
-          <div class="vl"><span id="dc-fb">—</span><span class="u">次</span></div>
+        <div class="cal-weekdays">
+          <div class="weekend">日</div><div>一</div><div>二</div><div>三</div><div>四</div><div>五</div><div class="weekend">六</div>
         </div>
-        <div class="day-row google">
-          <div class="ic">⭐</div>
-          <div class="nm">點進 Google 評論</div>
-          <div class="vl"><span id="dc-google">—</span><span class="u">次</span></div>
+        <div class="cal-grid" id="cal-grid"></div>
+        <div class="cal-detail">
+          <div class="day-title" id="day-title">選擇日期查看明細</div>
+          <table class="day-tbl num">
+            <thead><tr><th></th><th>點擊</th><th class="actual">實際加入</th></tr></thead>
+            <tbody id="day-body"></tbody>
+          </table>
         </div>
       </div>
-      <div class="day-total">
-        <div class="lb">當日總計</div>
-        <div class="vl" id="dc-total">—</div>
-      </div>
     </div>
-  </div>
+  </section>
 
-    </div>  <!-- 中欄結束 -->
-
-    <!-- ============ 右欄:真實數據趨勢 + Excel ============ -->
-    <div>
-
-  <!-- ===== 真實數據趨勢 (取代舊熱力圖+折線圖) ===== -->
-  <div class="chart-card">
-    <h3><span class="icon">📡</span>真實數據趨勢</h3>
-
-    <div class="rd-trend line">
-      <div class="rd-head">
-        <span class="rd-icn">💬</span>
-        <span class="rd-name">LINE 好友</span>
-        <span class="rd-cur" id="rd-line-cur">—</span>
-      </div>
-      <div class="rd-deltas" id="rd-line-deltas">—</div>
-      <div class="rd-chart-wrap"><canvas id="rd-line-chart"></canvas></div>
+  <footer>
+    <div class="meta" id="meta">資料載入中…</div>
+    <div class="actions">
+      <button class="btn" onclick="window.open('https://magicbrian1206-maker.github.io/landing/','_blank')">開啟落地頁</button>
+      <button class="btn" id="btn-excel" onclick="exportExcel()">下載 Excel</button>
     </div>
-
-    <div class="rd-trend fb">
-      <div class="rd-head">
-        <span class="rd-icn">👍</span>
-        <span class="rd-name">FB 追蹤</span>
-        <span class="rd-cur" id="rd-fb-cur">—</span>
-      </div>
-      <div class="rd-deltas" id="rd-fb-deltas">—</div>
-      <div class="rd-chart-wrap"><canvas id="rd-fb-chart"></canvas></div>
-    </div>
-
-    <div class="rd-trend google">
-      <div class="rd-head">
-        <span class="rd-icn">⭐</span>
-        <span class="rd-name">Google 評論</span>
-        <span class="rd-cur" id="rd-google-cur">—</span>
-      </div>
-      <div class="rd-deltas" id="rd-google-deltas">—</div>
-      <div class="rd-chart-wrap"><canvas id="rd-google-chart"></canvas></div>
-    </div>
-  </div>
-
-    </div>  <!-- 右欄結束 -->
-
-  </div>  <!-- main-grid 結束 -->
+  </footer>
 
 </div>
 
@@ -838,102 +244,20 @@ const NS = 'tsann-kuen-appleshop';
 // ===== 真實數據模式：'off' 純點擊 / 'manual' 手動填數字 / 'api' 自動串接 =====
 // 產生器會依店家選擇改這一行；預設 api = 打自己的 /external 端點
 const REAL_DATA_MODE = 'api';   /*__REAL_DATA_MODE__*/
-const BRANDS = ['line', 'fb', 'google'];
-// Abacus 鍵長度至少 3 字元，因此 fb 的資料鍵使用 'facebook'（UI 用 fb，資料用 facebook）
-const DATA_KEY = { line: 'line', fb: 'facebook', google: 'google' };
-const CIRCS = { line: 659.7, fb: 490.1, google: 320.4 };
-
-// 抓計數器一個 key 的值（不存在回 0）
-// Cloudflare Worker 後端，無 rate limit，簡單直接
-const _fetchCache = new Map();
 const API_BASE = 'https://tsann-counter.magicbrian1206.workers.dev';
-
-async function fetchKey(key) {
-  if (_fetchCache.has(key)) return _fetchCache.get(key);
-  const promise = (async () => {
-    try {
-      const r = await fetch(`${API_BASE}/get/${NS}/${key}`);
-      if (r.status === 404) return 0;
-      if (!r.ok) return 0;
-      const j = await r.json();
-      if (j.error) return 0;
-      return j.value ?? 0;
-    } catch(e) {
-      _fetchCache.delete(key);
-      return 0;
-    }
-  })();
-  _fetchCache.set(key, promise);
-  return promise;
-}
-function clearFetchCache(){ _fetchCache.clear(); }
-
-// 日期工具
-const pad = n => n < 10 ? '0'+n : ''+n;
-function dayKey(d){ return `${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}`; }
-function monthKey(d){ return `${d.getFullYear()}${pad(d.getMonth()+1)}`; }
-function isoWeek(d){
-  const dt = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
-  const dn = (dt.getUTCDay() + 6) % 7;
-  dt.setUTCDate(dt.getUTCDate() - dn + 3);
-  const ft = new Date(Date.UTC(dt.getUTCFullYear(),0,4));
-  const w = 1 + Math.round(((dt - ft)/86400000 - 3 + ((ft.getUTCDay()+6)%7)) / 7);
-  return dt.getUTCFullYear() + 'W' + pad(w);
-}
-function lastNDays(n){
-  const arr = [];
-  for (let i = 0; i < n; i++) {
-    const d = new Date();
-    d.setDate(d.getDate() - i);
-    arr.push(dayKey(d));
-  }
-  return arr;
-}
-function lastNMonths(n){
-  const arr = [];
-  for (let i = 0; i < n; i++) {
-    const d = new Date();
-    d.setMonth(d.getMonth() - i);
-    arr.push(monthKey(d));
-  }
-  return arr;
-}
-
-// 取一個 brand 在某段期間的總和
-async function sumKeys(brand, keys) {
-  const vals = await Promise.all(keys.map(k => fetchKey(k)));
-  return vals.reduce((a,b)=>a+b, 0);
-}
-
-// 取得某 brand 在某 period 的計數
-async function getCount(brand, period) {
-  const dk = DATA_KEY[brand];
-  const today = new Date();
-  if (period === 'today') {
-    return fetchKey(`${dk}-d-${dayKey(today)}`);
-  }
-  if (period === 'week') {
-    return fetchKey(`${dk}-w-${isoWeek(today)}`);
-  }
-  if (period === 'month') {
-    return fetchKey(`${dk}-m-${monthKey(today)}`);
-  }
-  if (period === '3m') {
-    return sumKeys(brand, lastNMonths(3).map(m => `${dk}-m-${m}`));
-  }
-  if (period === '6m') {
-    return sumKeys(brand, lastNMonths(6).map(m => `${dk}-m-${m}`));
-  }
-  if (period === '1y') {
-    return sumKeys(brand, lastNMonths(12).map(m => `${dk}-m-${m}`));
-  }
-  if (period === 'total') {
-    return fetchKey(dk);
-  }
-  return 0;
-}
-
-// 期間設定
+const SINCE_YMD = '20260516';   // 累計起點：三平台統一從 5/16 起算（FB 接上日）
+const BRANDS = ['line', 'fb', 'google'];
+// 計數器資料鍵：fb 用 'facebook'（Worker 鍵長度需 ≥3）
+const DATA_KEY = { line: 'line', fb: 'facebook', google: 'google' };
+const META = {
+  line:   { name: 'LINE 好友',   click: '加 LINE 好友',     color: '#06C755', unit: '' },
+  fb:     { name: 'FB 追蹤數',   click: '點進 FB 粉絲團',   color: '#1877F2', unit: '' },
+  google: { name: 'Google 評論', click: '點進 Google 評論', color: '#FBBC05', unit: ' 則' },
+};
+// 每日快照鍵前綴（實際數字）
+const SNAP_PREFIX = REAL_DATA_MODE === 'manual'
+  ? { line: ['rd-line-d-'], fb: ['rd-fb-d-'], google: ['rd-google-d-'] }
+  : { line: ['line-friends-d-'], fb: ['facebook-followers-d-', 'facebook-fans-d-'], google: ['google-reviews-d-'] };
 const PERIODS = [
   { id: 'today', label: '今日',   goal: 5 },
   { id: 'week',  label: '本週',   goal: 25 },
@@ -943,581 +267,475 @@ const PERIODS = [
   { id: '1y',    label: '一年',   goal: 600 },
   { id: 'total', label: '總計',   goal: 1000 },
 ];
+const WK = ['日','一','二','三','四','五','六'];
 
-let currentPeriod = 'today';
-const cache = {};
+// =============== 讀取工具 ===============
+const _fetchCache = new Map();   // 點擊計數（不存在 = 0）
+const _rawCache = new Map();     // 快照（不存在 = null）
+async function fetchKey(key) {
+  if (_fetchCache.has(key)) return _fetchCache.get(key);
+  const p = (async () => {
+    try {
+      const r = await fetch(`${API_BASE}/get/${NS}/${key}`);
+      if (!r.ok) return 0;
+      const j = await r.json();
+      return j.error ? 0 : (j.value ?? 0);
+    } catch (e) { _fetchCache.delete(key); return 0; }
+  })();
+  _fetchCache.set(key, p);
+  return p;
+}
+async function getRaw(key) {
+  if (_rawCache.has(key)) return _rawCache.get(key);
+  const p = (async () => {
+    try {
+      const r = await fetch(`${API_BASE}/get/${NS}/${key}`);
+      if (!r.ok) return null;
+      const j = await r.json();
+      return (typeof j.value === 'number') ? j.value : null;
+    } catch (e) { _rawCache.delete(key); return null; }
+  })();
+  _rawCache.set(key, p);
+  return p;
+}
+function clearCaches() { _fetchCache.clear(); _rawCache.clear(); }
 
-// 渲染 tab
-function renderTabs(){
-  const t = document.getElementById('tabs');
-  t.innerHTML = '';
-  PERIODS.forEach(p => {
-    const b = document.createElement('button');
-    b.className = 'tab' + (p.id === currentPeriod ? ' active' : '');
-    b.textContent = p.label;
-    b.onclick = () => switchPeriod(p.id);
-    t.appendChild(b);
-  });
+// =============== 日期工具 ===============
+const pad = n => n < 10 ? '0' + n : '' + n;
+const dayKey = d => `${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}`;
+const monthKey = d => `${d.getFullYear()}${pad(d.getMonth()+1)}`;
+const ymdDate = s => new Date(+s.slice(0,4), +s.slice(4,6) - 1, +s.slice(6,8));
+const addDays = (s, n) => { const d = ymdDate(s); d.setDate(d.getDate() + n); return dayKey(d); };
+const fmtMD = s => (s && s.length === 8) ? `${+s.slice(4,6)}/${+s.slice(6,8)}` : '—';
+function isoWeek(d) {
+  const dt = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+  const dn = (dt.getUTCDay() + 6) % 7;
+  dt.setUTCDate(dt.getUTCDate() - dn + 3);
+  const ft = new Date(Date.UTC(dt.getUTCFullYear(), 0, 4));
+  const w = 1 + Math.round(((dt - ft) / 86400000 - 3 + ((ft.getUTCDay() + 6) % 7)) / 7);
+  return dt.getUTCFullYear() + 'W' + pad(w);
+}
+function lastNMonths(n) {
+  const arr = [], t = new Date();
+  for (let i = 0; i < n; i++) arr.push(monthKey(new Date(t.getFullYear(), t.getMonth() - i, 1)));
+  return arr;
+}
+function lastNDays(n) {
+  const arr = [], t = dayKey(new Date());
+  for (let i = 0; i < n; i++) arr.push(addDays(t, -i));
+  return arr;   // 最新在前
+}
+// 期間第一天（實際加入從「前一天收盤」算起）
+function periodStart(id) {
+  const t = new Date(), y = t.getFullYear(), m = t.getMonth();
+  if (id === 'today') return dayKey(t);
+  if (id === 'week')  { const d = new Date(t); d.setDate(t.getDate() - ((t.getDay() + 6) % 7)); return dayKey(d); }
+  if (id === 'month') return dayKey(new Date(y, m, 1));
+  if (id === '3m')    return dayKey(new Date(y, m - 2, 1));
+  if (id === '6m')    return dayKey(new Date(y, m - 5, 1));
+  if (id === '1y')    return dayKey(new Date(y, m - 11, 1));
+  return addDays(SINCE_YMD, 1);   // total
 }
 
-async function switchPeriod(id){
-  currentPeriod = id;
-  renderTabs();
-  await renderPeriod(id);
+// =============== 格式工具 ===============
+function fmtDelta(n, unit = '') {
+  if (n == null) return '—';
+  if (n === 0) return '±0' + unit;
+  return (n > 0 ? '+' : '') + n.toLocaleString() + unit;
 }
+const cls = n => (n == null || n === 0) ? 'flat' : (n > 0 ? 'up' : 'down');
 
-function bump(id){
-  const el = document.getElementById(id);
-  el.classList.add('bump');
-  setTimeout(()=>el.classList.remove('bump'), 400);
+// =============== 點擊計數 ===============
+async function getClicks(brand, period) {
+  const dk = DATA_KEY[brand], t = new Date();
+  if (period === 'today') return fetchKey(`${dk}-d-${dayKey(t)}`);
+  if (period === 'week')  return fetchKey(`${dk}-w-${isoWeek(t)}`);
+  if (period === 'month') return fetchKey(`${dk}-m-${monthKey(t)}`);
+  const n = { '3m': 3, '6m': 6, '1y': 12 }[period];
+  if (n) return (await Promise.all(lastNMonths(n).map(mk => fetchKey(`${dk}-m-${mk}`)))).reduce((a, b) => a + b, 0);
+  if (period === 'total') return fetchKey(dk);
+  return 0;
 }
+const dayClicks = (brand, ymd) => fetchKey(`${DATA_KEY[brand]}-d-${ymd}`);
 
-const prev = {};
-async function renderPeriod(id, force=false){
-  document.getElementById('rings-card').classList.add('loading');
-  const period = PERIODS.find(p => p.id === id);
-  document.getElementById('period-name').textContent = period.label;
-  document.getElementById('period-goal').textContent = period.goal;
+// =============== 真實數據 ===============
+let EXT = null;
+const snapMap = { line: new Map(), fb: new Map(), google: new Map() };
 
-  // 抓 3 個 brand 的數據
-  const data = {};
-  if (cache[id] && !force) {
-    Object.assign(data, cache[id]);
-  } else {
-    const counts = await Promise.all(BRANDS.map(b => getCount(b, id)));
-    BRANDS.forEach((b,i) => data[b] = counts[i]);
-    cache[id] = data;
-  }
-
-  let total = 0;
-  BRANDS.forEach(b => {
-    const v = data[b];
-    total += v;
-
-    // 環
-    const ring = document.getElementById(`ring-${b}`);
-    const circ = CIRCS[b];
-    const pct = Math.min(v / period.goal, 1);
-    ring.style.strokeDashoffset = circ - circ * pct;
-
-    // Legend
-    document.getElementById(`leg-${b}`).textContent = v.toLocaleString();
-
-    // Detail card
-    const dEl = document.getElementById(`d-${b}`);
-    const newTxt = v.toLocaleString();
-    if (dEl.textContent !== newTxt && prev[b] !== undefined) bump(`d-${b}`);
-    dEl.textContent = newTxt;
-    document.getElementById(`p-${b}`).textContent =
-      Math.round(Math.min(v / period.goal * 100, 999)) + '%';
-    document.getElementById(`g-${b}`).textContent = `目標 ${period.goal}`;
-    prev[b] = v;
-  });
-
-  const tEl = document.getElementById('total');
-  if (tEl.textContent != total.toLocaleString()) {
-    tEl.textContent = total.toLocaleString();
-    bump('total');
-  }
-
-  // 更新時間
-  const now = new Date();
-  const wk = ['日','一','二','三','四','五','六'][now.getDay()];
-  document.getElementById('today-date').textContent =
-    `${now.toLocaleDateString('zh-TW',{month:'long',day:'numeric'})} 星期${wk}`;
-  document.getElementById('meta').textContent =
-    `最後更新：${now.toLocaleTimeString('zh-TW',{hour12:false})}　·　每 60 秒自動更新`;
-
-  document.getElementById('rings-card').classList.remove('loading');
-}
-
-async function loadAll(force=false){
-  if (force) {
-    Object.keys(cache).forEach(k => delete cache[k]);
-    clearFetchCache();
-  }
-  await renderPeriod(currentPeriod, force);
-  // 同步刷新月曆 + 當天明細 + 圖表
-  if (typeof selectedDate !== 'undefined' && selectedDate) {
-    await loadDayDetail(selectedDate);
-  }
-  if (typeof renderCalendar === 'function') renderCalendar();
-  if (typeof renderExternalCharts === 'function') renderExternalCharts();
-  if (typeof renderCalendar === 'function') renderCalendar();
-  // 真實數據卡
-  if (force && typeof loadExternalStats === 'function') loadExternalStats();
-}
-
-// =============== 真實數據卡 (LINE 好友 / Google 評論 / FB 粉絲) ===============
-// ===== 真實數據取得（依模式）=====
-// 回傳與 /external 相同結構： {line:{...}, google:{...}, fb:{...}}
 async function fetchExternalData() {
-  if (REAL_DATA_MODE === 'manual') {
-    return await buildManualExternal();
-  }
+  if (REAL_DATA_MODE === 'manual') return await buildManualExternal();
   const r = await fetch(`${API_BASE}/external`);
   if (!r.ok) throw new Error('HTTP ' + r.status);
   return await r.json();
 }
 
-// manual 模式：從自己的 namespace 讀 rd-* 鍵，組成 /external 結構
-// 目前值鍵： rd-line / rd-fb / rd-google / rd-google-rating
-// 每日快照鍵： rd-<key>-d-YYYYMMDD （載入時自動寫入當天值，隔天起累積出趨勢）
+// manual 模式：從 rd-* 鍵組成與 /external 相同結構，並寫入當天快照
 async function buildManualExternal() {
-  const todayYmd = (() => {
-    const d = new Date();
-    return d.getFullYear().toString()
-      + String(d.getMonth() + 1).padStart(2, '0')
-      + String(d.getDate()).padStart(2, '0');
-  })();
-
+  const today = dayKey(new Date());
   async function series(rdKey) {
     const current = await fetchKey(rdKey);
-    // 寫入今天快照（用現成 /set，冪等）
     if (current > 0) {
-      try { await fetch(`${API_BASE}/set/${NS}/${rdKey}-d-${todayYmd}?v=${current}`); }
-      catch (e) { /* 快照失敗不影響顯示 */ }
+      try { await fetch(`${API_BASE}/set/${NS}/${rdKey}-d-${today}?v=${current}`); } catch (e) {}
     }
-    // 抓最近 60 天快照組 history（最新在前）
-    const days = [];
-    const base = new Date();
-    for (let i = 0; i < 60; i++) {
-      const dd = new Date(base); dd.setDate(base.getDate() - i);
-      const ymd = dd.getFullYear().toString()
-        + String(dd.getMonth() + 1).padStart(2, '0')
-        + String(dd.getDate()).padStart(2, '0');
-      days.push(ymd);
-    }
-    const vals = await Promise.all(days.map(ymd => fetchKey(`${rdKey}-d-${ymd}`)));
-    const history = [];
-    for (let i = 0; i < days.length; i++) {
-      if (vals[i] > 0) history.push({ date: days[i], value: vals[i] });
-    }
-    // deltaWeek / deltaMonth：current - 7天前/30天前（有資料才算）
-    const valAt = n => {
-      const dd = new Date(base); dd.setDate(base.getDate() - n);
-      const ymd = dd.getFullYear().toString()
-        + String(dd.getMonth() + 1).padStart(2, '0')
-        + String(dd.getDate()).padStart(2, '0');
-      const hit = history.find(h => h.date === ymd);
-      return hit ? hit.value : null;
-    };
+    const days = lastNDays(60);
+    const vals = await Promise.all(days.map(d => fetchKey(`${rdKey}-d-${d}`)));
+    const history = days.map((d, i) => ({ date: d, value: vals[i] })).filter(h => h.value > 0);
+    const valAt = n => { const h = history.find(x => x.date === addDays(today, -n)); return h ? h.value : null; };
     const w = valAt(7), m = valAt(30);
-    return {
-      current,
-      deltaWeek:  (w != null) ? current - w : null,
-      deltaMonth: (m != null) ? current - m : null,
-      asOf: todayYmd,
-      history,
-    };
+    return { current, asOf: today, history,
+             deltaWeek: w != null ? current - w : null, deltaMonth: m != null ? current - m : null };
   }
-
-  const [line, fb, google] = await Promise.all([
-    series('rd-line'), series('rd-fb'), series('rd-google'),
-  ]);
-  google.rating = await fetchKey('rd-google-rating') || null;
-  if (google.rating) google.rating = (google.rating / 10).toFixed(1); // 存 48 → 顯示 4.8
+  const [line, fb, google] = await Promise.all([series('rd-line'), series('rd-fb'), series('rd-google')]);
+  const rating = await fetchKey('rd-google-rating');
+  google.rating = rating ? (rating / 10).toFixed(1) : null;   // 存 48 → 4.8
   return { line, fb, google };
 }
 
-async function loadExternalStats() {
-  if (REAL_DATA_MODE === 'off') return;   // 純點擊模式，不顯示真實數據
+function extOk(b) { return EXT && EXT[b] && !EXT[b].error && EXT[b].current != null; }
+function asOf(b)  { return (EXT && EXT[b] && EXT[b].asOf) || dayKey(new Date()); }
+
+// 某天收盤值：最新一天用即時值，其餘先查 /external 的 history，沒有再讀 KV
+async function snapAt(b, ymd) {
+  if (extOk(b) && ymd === asOf(b)) return EXT[b].current;
+  if (snapMap[b].has(ymd)) return snapMap[b].get(ymd);
+  for (const p of SNAP_PREFIX[b]) {
+    const v = await getRaw(p + ymd);
+    if (v != null) return v;
+  }
+  return null;
+}
+
+// 從 startYmd 當天到最新一天的實際增加（基準 = startYmd 前一天收盤，不早於 SINCE_YMD）
+// 回傳 { value, base, clamped } 或 null（資料不足 / LINE 尚未結算）
+async function actualSince(b, startYmd) {
+  if (!extOk(b)) return null;
+  const end = asOf(b);
+  let d = addDays(startYmd, -1);
+  const clamped = d < SINCE_YMD;
+  if (clamped) d = SINCE_YMD;
+  for (let i = 0; i < 14 && d < end; i++, d = addDays(d, 1)) {
+    const v = await snapAt(b, d);
+    if (v != null) return { value: EXT[b].current - v, base: d, baseValue: v, clamped };
+  }
+  // manual 模式：店家各自開始記錄的日期不同，找不到就改用期間內最早一筆快照
+  if (REAL_DATA_MODE === 'manual') {
+    const base0 = clamped ? SINCE_YMD : addDays(startYmd, -1);
+    const h = (EXT[b].history || []).filter(x => x.date >= base0 && x.date < end).pop();   // history 最新在前 → pop 取最早
+    if (h) return { value: EXT[b].current - h.value, base: h.date, baseValue: h.value, clamped: true };
+  }
+  return null;
+}
+
+// 單日實際增加 = 當天收盤 − 前一天收盤
+async function dayActual(b, ymd) {
+  if (!extOk(b) || ymd > asOf(b) || addDays(ymd, -1) < SINCE_YMD) return null;
+  const [v1, v0] = await Promise.all([snapAt(b, ymd), snapAt(b, addDays(ymd, -1))]);
+  return (v1 != null && v0 != null) ? v1 - v0 : null;
+}
+
+async function loadExternal() {
+  if (REAL_DATA_MODE === 'off') return;
   try {
-    const j = await fetchExternalData();
-    renderExternal(j);
-    const updatedTxt = j.cached
-      ? '快取資料 (5 分鐘內更新一次)'
-      : '剛剛更新 · ' + new Date().toLocaleTimeString('zh-TW',{hour:'2-digit',minute:'2-digit'});
-    const m = document.getElementById('ext-meta-r');
-    if (m) m.textContent = updatedTxt;
+    EXT = await fetchExternalData();
+    BRANDS.forEach(b => {
+      snapMap[b].clear();
+      ((EXT[b] && EXT[b].history) || []).forEach(h => snapMap[b].set(h.date, h.value));
+    });
+    document.getElementById('ext-meta-r').textContent = EXT.cached
+      ? '快取資料（5 分鐘內更新一次）'
+      : '剛剛更新 · ' + new Date().toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit' });
   } catch (e) {
     console.warn('[external] fetch failed:', e);
-    const m = document.getElementById('ext-meta-r');
-    if (m) m.textContent = '⚠️ 無法連線';
+    document.getElementById('ext-meta-r').textContent = '⚠️ 無法連線';
   }
 }
 
-function _fmtDelta(n, unit='') {
-  if (n == null) return '—';
-  if (n === 0)   return '±0' + unit;
-  return (n > 0 ? '+' : '') + n + unit;
-}
-function _deltaClass(n) {
-  if (n == null) return 'flat';
-  if (n === 0)   return 'flat';
-  return n > 0 ? 'up' : 'down';
-}
-function _fmtMD(ymd) {
-  if (!ymd || ymd.length !== 8) return '—';
-  return parseInt(ymd.slice(4,6)) + '/' + parseInt(ymd.slice(6,8));
-}
-
-function renderExternal(d) {
-  // ---- LINE ----
-  const lineNum   = document.getElementById('ext-line-num');
-  const lineDelta = document.getElementById('ext-line-delta');
-  const lineAsOf  = document.getElementById('ext-line-asof');
-  if (d.line && !d.line.error && d.line.current != null) {
-    lineNum.textContent = d.line.current.toLocaleString();
-    lineDelta.textContent = '本週 ' + _fmtDelta(d.line.deltaWeek);
-    lineDelta.className   = 'ext-delta ' + _deltaClass(d.line.deltaWeek);
-    lineAsOf.textContent  = '截至 ' + _fmtMD(d.line.asOf);
-  } else {
-    lineNum.textContent = '—';
-    lineAsOf.textContent = (d.line && d.line.error) ? '⚠️ API 錯誤' : '載入中';
+// =============== ① 真實數據卡 ===============
+const sparkCharts = {};
+async function renderKPI() {
+  if (REAL_DATA_MODE === 'off') return;
+  const order = ['line', 'google', 'fb'];
+  const grid = document.getElementById('kpi-grid');
+  if (!grid.children.length) {
+    grid.innerHTML = order.map(b => `
+      <div class="card kpi ${b}">
+        <div class="kpi-head"><span class="nm"><span class="dot"></span>${META[b].name}</span><span id="k-${b}-asof">—</span></div>
+        <div class="kpi-cur num" id="k-${b}-cur">—</div>
+        <div class="chips num">
+          <span class="chip"><span class="lb">近 7 天</span><span id="k-${b}-w">—</span></span>
+          <span class="chip"><span class="lb">近 30 天</span><span id="k-${b}-m">—</span></span>
+        </div>
+        <div class="since">
+          <div><div class="lb">累計增加</div><div class="note" id="k-${b}-note">自 ${fmtMD(SINCE_YMD)} 起</div></div>
+          <div class="v num" id="k-${b}-since">—</div>
+        </div>
+        <div class="spark"><canvas id="k-${b}-spark"></canvas></div>
+      </div>`).join('');
   }
-
-  // ---- Google ----
-  const gNum = document.getElementById('ext-google-num');
-  const gRat = document.getElementById('ext-google-rating');
-  const gDel = document.getElementById('ext-google-delta');
-  if (d.google && !d.google.error && d.google.current != null) {
-    gNum.textContent = d.google.current.toLocaleString() + ' 則';
-    gRat.textContent = '⭐ ' + (d.google.rating ?? '—');
-    gDel.textContent = '本週 ' + _fmtDelta(d.google.deltaWeek, ' 則');
-    gDel.className   = 'ext-delta ' + _deltaClass(d.google.deltaWeek);
-  } else {
-    gNum.textContent = '—';
-  }
-
-  // ---- FB ----
-  const fbNum  = document.getElementById('ext-fb-num');
-  const fbDel  = document.getElementById('ext-fb-delta');
-  const fbAsOf = document.getElementById('ext-fb-asof');
-  if (d.fb && d.fb.current != null) {
-    fbNum.textContent  = d.fb.current.toLocaleString();
-    fbDel.textContent  = '本週 ' + _fmtDelta(d.fb.deltaWeek);
-    fbDel.className    = 'ext-delta ' + _deltaClass(d.fb.deltaWeek);
-    fbAsOf.textContent = '更新於 ' + _fmtMD(d.fb.asOf);
-  } else {
-    fbNum.textContent  = '—';
-    fbDel.textContent  = '載入中';
-    fbDel.className    = 'ext-delta flat';
-    fbAsOf.textContent = '—';
-  }
-}
-
-// 自動模式下不再需要手動輸入（保留 stub 避免舊 onclick 報錯）
-async function submitFb() {
-  console.warn('submitFb is deprecated — FB followers are now auto-fetched via Graph API');
-}
-
-// off 模式：直接隱藏真實數據卡 + 趨勢卡
-if (REAL_DATA_MODE === 'off') {
-  const extCard = document.getElementById('ext-card');
-  if (extCard) extCard.style.display = 'none';
-  // 趨勢卡：找到含「真實數據趨勢」標題的 chart-card 隱藏
-  document.querySelectorAll('.chart-card h3').forEach(h => {
-    if (h.textContent.includes('真實數據趨勢')) h.closest('.chart-card').style.display = 'none';
-  });
-}
-
-// 啟動 + 每 5 分鐘自動刷新（off 模式下函式會自行 return）
-loadExternalStats();
-setInterval(loadExternalStats, 5 * 60 * 1000);
-
-renderTabs();
-loadAll();
-setInterval(() => loadAll(true), 60000);
-
-// =============== 月曆 ===============
-let calYear, calMonth, selectedDate;
-
-function sameDay(a, b){
-  return a.getFullYear()===b.getFullYear() && a.getMonth()===b.getMonth() && a.getDate()===b.getDate();
-}
-
-async function renderCalendar(){
-  const today = new Date();
-  const firstDay = new Date(calYear, calMonth, 1);
-  const lastDay = new Date(calYear, calMonth+1, 0);
-  const daysInMonth = lastDay.getDate();
-  const startDow = firstDay.getDay(); // 0=Sun
-
-  const monthNames = ['一月','二月','三月','四月','五月','六月','七月','八月','九月','十月','十一月','十二月'];
-  document.getElementById('cal-title').textContent = `${calYear} 年 ${monthNames[calMonth]}`;
-  document.getElementById('cal-next').disabled =
-    (calYear > today.getFullYear()) || (calYear === today.getFullYear() && calMonth >= today.getMonth());
-
-  const grid = document.getElementById('cal-grid');
-  grid.innerHTML = '';
-
-  // 前置空格
-  for (let i = 0; i < startDow; i++) {
-    const el = document.createElement('div');
-    el.className = 'cal-cell empty';
-    grid.appendChild(el);
-  }
-
-  // 收集當月所有日期需要查詢的 keys，用於背景顯示活動點
-  const visibleDays = [];
-
-  for (let d = 1; d <= daysInMonth; d++) {
-    const date = new Date(calYear, calMonth, d);
-    const isFuture = date > today && !sameDay(date, today);
-    const isToday = sameDay(date, today);
-    const isSelected = selectedDate && sameDay(date, selectedDate);
-
-    const btn = document.createElement('button');
-    btn.className = 'cal-cell';
-    if (isFuture) btn.classList.add('future');
-    if (isToday) btn.classList.add('today');
-    if (isSelected) btn.classList.add('selected');
-    btn.textContent = d;
-    btn.dataset.day = d;
-
-    if (!isFuture) {
-      btn.addEventListener('click', () => selectDate(date));
-      visibleDays.push({ d, date, btn });
+  await Promise.all(order.map(async b => {
+    const x = EXT && EXT[b], u = META[b].unit;
+    const $ = id => document.getElementById(`k-${b}-${id}`);
+    if (!extOk(b)) {
+      $('cur').textContent = '—';
+      $('asof').textContent = (x && x.error) ? '⚠️ API 錯誤' : '載入中';
+      return;
     }
-    grid.appendChild(btn);
-  }
-
-  // 背景查詢每天總點擊數，顯示活動點
-  visibleDays.forEach(async ({d, date, btn}) => {
-    const key = `${date.getFullYear()}${pad(date.getMonth()+1)}${pad(date.getDate())}`;
-    const counts = await Promise.all(BRANDS.map(b => fetchKey(`${DATA_KEY[b]}-d-${key}`)));
-    const total = counts.reduce((a,b)=>a+b, 0);
-    if (total > 0 && !btn.classList.contains('selected')) {
-      const dot = document.createElement('div');
-      dot.className = 'activity';
-      btn.appendChild(dot);
+    $('cur').innerHTML = x.current.toLocaleString() + (b === 'google' ? '<small>則</small>' : '');
+    $('asof').textContent = b === 'google' ? `⭐ ${x.rating ?? '—'}`
+                          : (b === 'line' ? '截至 ' : '更新於 ') + fmtMD(x.asOf);
+    [['w', x.deltaWeek], ['m', x.deltaMonth]].forEach(([k, n]) => {
+      $(k).textContent = fmtDelta(n, u); $(k).className = cls(n);
+    });
+    const s = await actualSince(b, addDays(SINCE_YMD, 1));
+    if (s) {
+      $('since').textContent = fmtDelta(s.value, u);
+      $('since').className = 'v num ' + cls(s.value);
+      $('note').textContent = `自 ${fmtMD(s.base)} 起 · ${s.baseValue.toLocaleString()} → ${x.current.toLocaleString()}`;
+    } else {
+      $('since').textContent = '—'; $('since').className = 'v num flat';
     }
-  });
+    renderSpark(`k-${b}-spark`, x.history, META[b].color);
+  }));
 }
 
-async function selectDate(date){
-  selectedDate = date;
-  // 重新渲染以更新選取狀態
-  await renderCalendar();
-  await loadDayDetail(date);
-}
-
-async function loadDayDetail(date){
-  const key = `${date.getFullYear()}${pad(date.getMonth()+1)}${pad(date.getDate())}`;
-  const wk = ['日','一','二','三','四','五','六'][date.getDay()];
-  const isToday = sameDay(date, new Date());
-  document.getElementById('day-title').innerHTML =
-    `${date.getMonth()+1} 月 ${date.getDate()} 日 <span style="color:#8e8e93;font-weight:500;font-size:14px;">星期${wk}</span>` +
-    (isToday ? ' <span class="badge">今天</span>' : '');
-
-  // 顯示載入中
-  ['line','fb','google'].forEach(b => document.getElementById(`dc-${b}`).textContent = '…');
-  document.getElementById('dc-total').textContent = '…';
-
-  const counts = await Promise.all(BRANDS.map(b => fetchKey(`${DATA_KEY[b]}-d-${key}`)));
-  let total = 0;
-  BRANDS.forEach((b, i) => {
-    document.getElementById(`dc-${b}`).textContent = counts[i].toLocaleString();
-    total += counts[i];
-  });
-  document.getElementById('dc-total').textContent = total.toLocaleString() + ' 次';
-}
-
-document.getElementById('cal-prev').addEventListener('click', () => {
-  calMonth--;
-  if (calMonth < 0) { calMonth = 11; calYear--; }
-  renderCalendar();
-});
-document.getElementById('cal-next').addEventListener('click', () => {
-  calMonth++;
-  if (calMonth > 11) { calMonth = 0; calYear++; }
-  renderCalendar();
-});
-document.getElementById('cal-today').addEventListener('click', () => {
-  const t = new Date();
-  calYear = t.getFullYear();
-  calMonth = t.getMonth();
-  selectDate(t);
-});
-
-// 初始：顯示本月並預設選中今天
-(function initCalendar(){
-  const t = new Date();
-  calYear = t.getFullYear();
-  calMonth = t.getMonth();
-  selectedDate = t;
-  renderCalendar();
-  loadDayDetail(t);
-})();
-
-// =============== 真實數據趨勢圖 (LINE 好友 / FB 追蹤 / Google 評論) ===============
-const rdChartInstances = {};
-function _rdDeltaPiece(label, n) {
-  let cls = 'flat', txt = '±0';
-  if (n == null)      { cls = 'flat'; txt = '—'; }
-  else if (n > 0)     { cls = 'up';   txt = '+' + n; }
-  else if (n < 0)     { cls = 'down'; txt = String(n); }
-  return `<span class="rd-delta-piece ${cls}"><span class="label">${label}</span><span class="val">${txt}</span></span>`;
-}
-
-function _rdRenderChart(canvasId, history, color) {
-  // history: [{date:'YYYYMMDD', value:N}, ...] 最新在前 → 反轉為舊→新
+function renderSpark(id, history, color) {
   const hist = (history || []).slice().reverse();
-  const wrap = document.getElementById(canvasId).parentElement;
-
-  // 移掉舊的 empty 提示
-  const oldEmpty = wrap.querySelector('.rd-chart-empty');
-  if (oldEmpty) oldEmpty.remove();
-
-  if (rdChartInstances[canvasId]) {
-    rdChartInstances[canvasId].destroy();
-    rdChartInstances[canvasId] = null;
-  }
-
-  // 資料不到 2 筆 → 顯示提示
+  const wrap = document.getElementById(id).parentElement;
+  wrap.querySelector('.spark-empty')?.remove();
+  if (sparkCharts[id]) { sparkCharts[id].destroy(); sparkCharts[id] = null; }
   if (hist.length < 2) {
-    const empty = document.createElement('div');
-    empty.className = 'rd-chart-empty';
-    empty.textContent = hist.length === 0 ? '尚未開始累積' : '累積中…(明天起會出現趨勢)';
-    wrap.appendChild(empty);
+    const e = document.createElement('div');
+    e.className = 'spark-empty';
+    e.textContent = hist.length ? '累積中…（明天起會出現趨勢）' : '尚未開始累積';
+    wrap.appendChild(e);
     return;
   }
-
-  const labels = hist.map(h => parseInt(h.date.slice(4,6)) + '/' + parseInt(h.date.slice(6,8)));
-  const data = hist.map(h => h.value);
-  const ctx = document.getElementById(canvasId).getContext('2d');
-  rdChartInstances[canvasId] = new Chart(ctx, {
+  sparkCharts[id] = new Chart(document.getElementById(id).getContext('2d'), {
     type: 'line',
-    data: {
-      labels,
-      datasets: [{
-        data,
-        borderColor: color,
-        backgroundColor: color + '33',
-        borderWidth: 2,
-        tension: 0.35,
-        fill: true,
-        pointRadius: 0,
-        pointHoverRadius: 4,
-        pointHoverBackgroundColor: color,
-      }]
-    },
+    data: { labels: hist.map(h => fmtMD(h.date)),
+            datasets: [{ data: hist.map(h => h.value), borderColor: color, backgroundColor: color + '26',
+                         borderWidth: 2, tension: 0.35, fill: true, pointRadius: 0, pointHoverRadius: 3 }] },
     options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: {
-        legend: { display: false },
-        tooltip: {
-          backgroundColor: '#000',
-          titleColor: '#FFD500',
-          bodyColor: '#fff',
-          borderColor: '#3a3a3c',
-          borderWidth: 1,
-          displayColors: false,
-          callbacks: {
-            title: (items) => items[0].label,
-            label:  (ctx)  => ctx.parsed.y.toLocaleString(),
-          }
-        }
-      },
-      scales: {
-        x: { display: false },
-        y: { display: false, grace: '5%' }
-      },
+      responsive: true, maintainAspectRatio: false, animation: false,
+      plugins: { legend: { display: false },
+                 tooltip: { backgroundColor: '#000', titleColor: '#FFD500', bodyColor: '#fff', borderColor: '#3a3a3c',
+                            borderWidth: 1, displayColors: false, callbacks: { label: c => c.parsed.y.toLocaleString() } } },
+      scales: { x: { display: false }, y: { display: false, grace: '5%' } },
       interaction: { mode: 'nearest', intersect: false }
     }
   });
 }
 
-async function renderExternalCharts() {
-  if (REAL_DATA_MODE === 'off') return;   // 純點擊模式，不顯示趨勢
-  try {
-    const d = await fetchExternalData();
+// =============== ② 點擊 × 實際加入 ===============
+let currentPeriod = 'today';
+function renderTabs() {
+  const t = document.getElementById('tabs');
+  t.innerHTML = '';
+  PERIODS.forEach(p => {
+    const btn = document.createElement('button');
+    btn.className = 'tab' + (p.id === currentPeriod ? ' active' : '');
+    btn.textContent = p.label;
+    btn.onclick = () => { currentPeriod = p.id; renderTabs(); renderCompare(); };
+    t.appendChild(btn);
+  });
+}
 
-    const sources = [
-      { key: 'line',   color: '#06C755', canvas: 'rd-line-chart',   curEl: 'rd-line-cur',   delEl: 'rd-line-deltas' },
-      { key: 'fb',     color: '#1877F2', canvas: 'rd-fb-chart',     curEl: 'rd-fb-cur',     delEl: 'rd-fb-deltas'   },
-      { key: 'google', color: '#FBBC05', canvas: 'rd-google-chart', curEl: 'rd-google-cur', delEl: 'rd-google-deltas' },
-    ];
-    for (const s of sources) {
-      const x = d[s.key];
-      if (x && x.current != null) {
-        document.getElementById(s.curEl).textContent = x.current.toLocaleString();
-        document.getElementById(s.delEl).innerHTML =
-          _rdDeltaPiece('本週', x.deltaWeek) + _rdDeltaPiece('本月', x.deltaMonth);
-        _rdRenderChart(s.canvas, x.history, s.color);
-      } else {
-        document.getElementById(s.curEl).textContent = '—';
-        document.getElementById(s.delEl).innerHTML = '<span class="rd-delta-piece flat"><span class="val">載入中…</span></span>';
-      }
-    }
-  } catch (e) {
-    console.warn('[renderExternalCharts] failed:', e);
+async function renderCompare() {
+  const card = document.getElementById('cmp-card');
+  card.classList.add('loading');
+  const id = currentPeriod, period = PERIODS.find(p => p.id === id), start = periodStart(id);
+  const clicks  = await Promise.all(BRANDS.map(b => getClicks(b, id)));
+  const actuals = REAL_DATA_MODE === 'off' ? BRANDS.map(() => null)
+                : await Promise.all(BRANDS.map(b => actualSince(b, start)));
+  if (id !== currentPeriod) return;   // 期間已切換，捨棄舊結果
+
+  const cell = (b, nm, clk, act, unit, goal) => `
+    <div class="cmp ${b}">
+      <div class="cmp-nm">${b === 'total' ? '' : '<span class="dot"></span>'}${nm}</div>
+      <div class="cmp-row"><span class="lb">點擊</span><span class="v num">${clk.toLocaleString()}<small>次</small></span></div>
+      ${goal ? `<div class="bar"><i style="width:${Math.min(clk / goal, 1) * 100}%"></i></div>
+                <div class="goal num">目標 ${goal}　·　${Math.round(clk / goal * 100)}%</div>` : ''}
+      <div class="cmp-row actual"><span class="lb">實際加入</span><span class="v num ${cls(act)}">${fmtDelta(act, unit)}</span></div>
+      <div class="cmp-row conv actual"><span class="lb">加入 ÷ 點擊</span><span class="v num">${(act != null && clk > 0) ? Math.round(act / clk * 100) + '%' : '—'}</span></div>
+    </div>`;
+
+  const totalClk = clicks.reduce((a, b) => a + b, 0);
+  const totalAct = actuals.some(a => a) ? actuals.reduce((s, a) => s + (a ? a.value : 0), 0) : null;
+  document.getElementById('cmp-grid').innerHTML =
+    BRANDS.map((b, i) => cell(b, META[b].click, clicks[i], actuals[i] ? actuals[i].value : null, META[b].unit, period.goal)).join('') +
+    cell('total', id === 'total' ? '全部合計' : `${period.label}合計`, totalClk, totalAct, '', 0);
+
+  // 說明：基準日、LINE 隔日結算、起點限制
+  const notes = [];
+  const late = BRANDS.map((b, i) => [b, actuals[i]]).filter(([b, a]) => a && a.base > addDays(start, -1));
+  if (late.length) notes.push('以下平台在此期間開始時還沒有紀錄，改從最早一筆起算：'
+    + late.map(([b, a]) => `${META[b].name} ${fmtMD(a.base)}`).join('、') + '。');
+  if (REAL_DATA_MODE === 'api' && extOk('line') && asOf('line') < start) notes.push(`LINE 好友數隔天才結算（目前截至 ${fmtMD(asOf('line'))}），今日數字明天顯示。`);
+  notes.push('實際加入含非落地頁來源（例如店內直接加好友），比例僅供參考。');
+  document.getElementById('cmp-foot').innerHTML = notes.join('<br>');
+  card.classList.remove('loading');
+}
+
+// =============== ③ 每日明細（近 14 天） ===============
+async function renderDaily() {
+  const days = lastNDays(14), today = dayKey(new Date());
+  const rows = await Promise.all(days.map(async d => ({
+    d,
+    clk: await Promise.all(BRANDS.map(b => dayClicks(b, d))),
+    act: REAL_DATA_MODE === 'off' ? [null, null, null] : await Promise.all(BRANDS.map(b => dayActual(b, d))),
+  })));
+  const td = (clk, act) => `<td class="clk gap-l">${clk}</td><td class="act actual ${cls(act)}">${fmtDelta(act)}</td>`;
+  document.getElementById('daily-body').innerHTML = rows.map(r => {
+    const dt = ymdDate(r.d);
+    return `<tr class="${r.d === today ? 'today' : ''}"><td>${fmtMD(r.d)}<span class="wk">${WK[dt.getDay()]}</span></td>` +
+           BRANDS.map((b, i) => td(r.clk[i], r.act[i])).join('') + '</tr>';
+  }).join('');
+  const sum = (k, i) => {
+    const vals = rows.map(r => r[k][i]).filter(v => v != null);
+    return vals.length ? vals.reduce((a, b) => a + b, 0) : null;
+  };
+  document.getElementById('daily-foot').innerHTML =
+    '<tr><td>14 天合計</td>' + BRANDS.map((b, i) => td(sum('clk', i), sum('act', i))).join('') + '</tr>';
+}
+
+// =============== 月曆 ===============
+let calYear, calMonth, selectedDate;
+const sameDay = (a, b) => a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+
+function renderCalendar() {
+  const today = new Date();
+  const first = new Date(calYear, calMonth, 1);
+  const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
+  document.getElementById('cal-title').textContent = `${calYear} 年 ${calMonth + 1} 月`;
+  document.getElementById('cal-next').disabled =
+    calYear > today.getFullYear() || (calYear === today.getFullYear() && calMonth >= today.getMonth());
+  const grid = document.getElementById('cal-grid');
+  grid.innerHTML = '';
+  for (let i = 0; i < first.getDay(); i++) {
+    const e = document.createElement('div'); e.className = 'cal-cell empty'; grid.appendChild(e);
   }
+  for (let d = 1; d <= daysInMonth; d++) {
+    const date = new Date(calYear, calMonth, d);
+    const isFuture = date > today && !sameDay(date, today);
+    const btn = document.createElement('button');
+    btn.className = 'cal-cell' + (isFuture ? ' future' : '') + (sameDay(date, today) ? ' today' : '')
+                  + (selectedDate && sameDay(date, selectedDate) ? ' selected' : '');
+    btn.textContent = d;
+    if (!isFuture) {
+      btn.onclick = () => selectDate(date);
+      Promise.all(BRANDS.map(b => dayClicks(b, dayKey(date)))).then(c => {
+        if (c.reduce((a, b) => a + b, 0) > 0 && !btn.classList.contains('selected')) {
+          const dot = document.createElement('div'); dot.className = 'activity'; btn.appendChild(dot);
+        }
+      });
+    }
+    grid.appendChild(btn);
+  }
+}
+
+function selectDate(date) { selectedDate = date; renderCalendar(); loadDayDetail(date); }
+
+async function loadDayDetail(date) {
+  const ymd = dayKey(date);
+  document.getElementById('day-title').innerHTML =
+    `${date.getMonth() + 1} 月 ${date.getDate()} 日<span class="wk">星期${WK[date.getDay()]}</span>` +
+    (sameDay(date, new Date()) ? '<span class="badge">今天</span>' : '');
+  const body = document.getElementById('day-body');
+  body.innerHTML = '<tr><td colspan="3" class="flat">載入中…</td></tr>';
+  const clk = await Promise.all(BRANDS.map(b => dayClicks(b, ymd)));
+  const act = REAL_DATA_MODE === 'off' ? [null, null, null] : await Promise.all(BRANDS.map(b => dayActual(b, ymd)));
+  if (dayKey(selectedDate) !== ymd) return;
+  const tc = clk.reduce((a, b) => a + b, 0);
+  const ta = act.some(v => v != null) ? act.reduce((s, v) => s + (v || 0), 0) : null;
+  body.innerHTML = BRANDS.map((b, i) => `
+    <tr class="${b}"><td class="nm"><span class="dot"></span>${META[b].click}</td>
+      <td class="clk">${clk[i]} 次</td><td class="act actual ${cls(act[i])}">${fmtDelta(act[i], META[b].unit)}</td></tr>`).join('') +
+    `<tr><td><b>當日合計</b></td><td class="clk"><b>${tc} 次</b></td><td class="act actual ${cls(ta)}"><b>${fmtDelta(ta)}</b></td></tr>`;
+}
+
+document.getElementById('cal-prev').onclick = () => { if (--calMonth < 0) { calMonth = 11; calYear--; } renderCalendar(); };
+document.getElementById('cal-next').onclick = () => { if (++calMonth > 11) { calMonth = 0; calYear++; } renderCalendar(); };
+document.getElementById('cal-today').onclick = () => { const t = new Date(); calYear = t.getFullYear(); calMonth = t.getMonth(); selectDate(t); };
+
+// =============== 整體載入 ===============
+async function loadAll(force = false) {
+  if (force) clearCaches();
+  const now = new Date();
+  document.getElementById('today-date').textContent =
+    `${now.getMonth() + 1} 月 ${now.getDate()} 日 星期${WK[now.getDay()]}`;
+  await loadExternal();
+  await Promise.all([renderKPI(), renderCompare(), renderDaily(), loadDayDetail(selectedDate)]);
+  renderCalendar();
+  document.getElementById('meta').textContent =
+    `最後更新 ${new Date().toLocaleTimeString('zh-TW', { hour12: false })}　·　每 60 秒自動更新`;
 }
 
 // =============== Excel 匯出 ===============
-async function exportExcel(){
-  const btn = document.querySelector('.download-btn');
-  const originalHTML = btn.innerHTML;
-  btn.innerHTML = '<span>⏳</span><span>產生 Excel 中…</span>';
-  btn.disabled = true;
-
+async function exportExcel() {
+  const btn = document.getElementById('btn-excel');
+  btn.textContent = '產生中…'; btn.disabled = true;
   try {
-    // ① 終身總計
-    const totalCounts = await Promise.all(BRANDS.map(b => fetchKey(DATA_KEY[b])));
-
-    // ② 過去 90 天每日紀錄
-    const days = lastNDays(90);
-    const dailyData = [['日期', '星期', 'LINE', 'Facebook', 'Google', '總計']];
-    for (const k of days.reverse()) {
-      const date = new Date(parseInt(k.slice(0,4)), parseInt(k.slice(4,6))-1, parseInt(k.slice(6,8)));
-      const wk = ['日','一','二','三','四','五','六'][date.getDay()];
-      const counts = await Promise.all(BRANDS.map(b => fetchKey(`${DATA_KEY[b]}-d-${k}`)));
-      const total = counts.reduce((a,b)=>a+b,0);
-      dailyData.push([
-        `${date.getFullYear()}-${pad(date.getMonth()+1)}-${pad(date.getDate())}`,
-        wk, counts[0], counts[1], counts[2], total
-      ]);
-    }
-
-    // ③ 近 12 個月每月紀錄
-    const months = lastNMonths(12);
-    const monthData = [['月份', 'LINE', 'Facebook', 'Google', '總計']];
-    for (const m of months.reverse()) {
-      const counts = await Promise.all(BRANDS.map(b => fetchKey(`${DATA_KEY[b]}-m-${m}`)));
-      const total = counts.reduce((a,b)=>a+b,0);
-      monthData.push([
-        `${m.slice(0,4)}-${m.slice(4,6)}`,
-        counts[0], counts[1], counts[2], total
-      ]);
-    }
-
-    // ④ 總覽
+    const withActual = REAL_DATA_MODE !== 'off';
+    const totals = await Promise.all(BRANDS.map(b => fetchKey(DATA_KEY[b])));
     const summary = [
       ['指標', '數量'],
-      ['點選 LINE 好友 (累計)', totalCounts[0]],
-      ['Facebook 按讚 (累計)', totalCounts[1]],
-      ['點進 Google 評論 (累計)', totalCounts[2]],
-      ['總點擊數', totalCounts.reduce((a,b)=>a+b,0)],
-      ['', ''],
-      ['報表產生時間', new Date().toLocaleString('zh-TW')],
-      ['店家', '燦坤華榮 AppleShop'],
-      ['網址', 'https://magicbrian1206-maker.github.io/landing/'],
+      ['點選 LINE 好友（累計點擊）', totals[0]],
+      ['點進 FB 粉絲團（累計點擊）', totals[1]],
+      ['點進 Google 評論（累計點擊）', totals[2]],
+      ['總點擊數', totals.reduce((a, b) => a + b, 0)],
     ];
+    if (withActual) {
+      summary.push(['', '']);
+      for (const b of BRANDS) {
+        const s = await actualSince(b, addDays(SINCE_YMD, 1));
+        summary.push([`${META[b].name} 目前`, extOk(b) ? EXT[b].current : '—']);
+        summary.push([`${META[b].name} 累計增加（自 ${s ? fmtMD(s.base) : fmtMD(SINCE_YMD)}）`, s ? s.value : '—']);
+      }
+    }
+    summary.push(['', ''], ['報表產生時間', new Date().toLocaleString('zh-TW')],
+                 ['店家', '燦坤華榮 AppleShop'], ['網址', 'https://magicbrian1206-maker.github.io/landing/']);
+
+    const head = ['日期', '星期', 'LINE 點擊', 'FB 點擊', 'Google 點擊', '點擊合計'];
+    if (withActual) head.push('LINE 實際加入', 'FB 實際加入', 'Google 實際增加');
+    const daily = [head];
+    for (const d of lastNDays(90).reverse()) {
+      const c = await Promise.all(BRANDS.map(b => dayClicks(b, d)));
+      const row = [`${d.slice(0,4)}-${d.slice(4,6)}-${d.slice(6,8)}`, WK[ymdDate(d).getDay()], ...c, c.reduce((a, b) => a + b, 0)];
+      if (withActual) (await Promise.all(BRANDS.map(b => dayActual(b, d)))).forEach(v => row.push(v ?? ''));
+      daily.push(row);
+    }
+
+    const monthly = [['月份', 'LINE 點擊', 'FB 點擊', 'Google 點擊', '點擊合計']];
+    for (const m of lastNMonths(12).reverse()) {
+      const c = await Promise.all(BRANDS.map(b => fetchKey(`${DATA_KEY[b]}-m-${m}`)));
+      monthly.push([`${m.slice(0,4)}-${m.slice(4,6)}`, ...c, c.reduce((a, b) => a + b, 0)]);
+    }
 
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(summary), '總覽');
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(dailyData), '每日紀錄_近90天');
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(monthData), '每月紀錄_近12月');
-
-    const today = new Date();
-    const fname = `燦坤華榮AppleShop-點擊紀錄-${today.getFullYear()}${pad(today.getMonth()+1)}${pad(today.getDate())}.xlsx`;
-    XLSX.writeFile(wb, fname);
-  } catch(e) {
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(daily), '每日紀錄_近90天');
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(monthly), '每月點擊_近12月');
+    XLSX.writeFile(wb, `燦坤華榮AppleShop-活動紀錄-${dayKey(new Date())}.xlsx`);
+  } catch (e) {
     alert('匯出失敗：' + e.message);
   } finally {
-    btn.innerHTML = originalHTML;
-    btn.disabled = false;
+    btn.textContent = '下載 Excel'; btn.disabled = false;
   }
 }
 
-// 初始化圖表
-renderLineChart();
-renderHeatmap();
-// 每 5 分鐘更新圖表
-setInterval(() => { renderLineChart(); renderHeatmap(); }, 5 * 60 * 1000);
+// =============== 啟動 ===============
+if (REAL_DATA_MODE === 'off') {
+  document.body.classList.add('mode-off');
+  document.querySelectorAll('th[colspan="2"]').forEach(th => th.colSpan = 1);   // 只剩點擊一欄
+}
+(function init() {
+  const t = new Date();
+  calYear = t.getFullYear(); calMonth = t.getMonth(); selectedDate = t;
+  renderTabs();
+  renderCalendar();
+  loadAll();
+  setInterval(() => loadAll(true), 60000);
+})();
 </script>
 </body>
 </html>
